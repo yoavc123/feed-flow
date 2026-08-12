@@ -56,7 +56,6 @@ internal fun FeedListSettingsScreenContent(
     onSwipeActionSelected: (SwipeDirection, SwipeActionType) -> Unit,
     setRemoveTitleFromDescription: (Boolean) -> Unit,
     onFeedOrderSelected: (FeedOrder) -> Unit,
-    setHideUnreadDot: (Boolean) -> Unit,
     setHideFeedSource: (Boolean) -> Unit,
     onDescriptionLineLimitSelected: (DescriptionLineLimit) -> Unit,
 ) {
@@ -168,14 +167,6 @@ internal fun FeedListSettingsScreenContent(
                         title = strings.settingsHideDate,
                         isChecked = state.isHideDateEnabled,
                         onCheckedChange = setHideDate,
-                    )
-                }
-
-                item {
-                    SettingSwitchItem(
-                        title = strings.settingsHideUnreadDot,
-                        isChecked = state.isHideUnreadDotEnabled,
-                        onCheckedChange = setHideUnreadDot,
                     )
                 }
 
@@ -351,7 +342,6 @@ private fun FeedListSettingsScreenContentPreview() {
             onSwipeActionSelected = { _, _ -> },
             setRemoveTitleFromDescription = {},
             onFeedOrderSelected = {},
-            setHideUnreadDot = {},
             setHideFeedSource = {},
             onDescriptionLineLimitSelected = {},
         )

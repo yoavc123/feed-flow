@@ -1,94 +1,56 @@
-screenshot_copy_android_phone_01_headline: "Просто список."
-screenshot_copy_android_phone_01_subheadline: "Чистый RSS-читалка для сосредоточенного
-  чтения."
-screenshot_copy_android_phone_02_headline: "Читайте по-своему"
-screenshot_copy_android_phone_02_subheadline: "Режим чтения — чище, без отвлекающих
-  факторов."
-screenshot_copy_android_phone_03_headline: "Поддерживайте порядок"
-screenshot_copy_android_phone_03_subheadline: "Счётчики непрочитанных, закладки и
-  категории — всё под рукой."
-screenshot_copy_android_phone_04_headline: "Синхронизируйте по-своему"
-screenshot_copy_android_phone_04_subheadline: "Dropbox, Drive, FreshRSS, Feedbin и
-  другие."
-screenshot_copy_android_phone_05_headline: "Настройте список под себя"
-screenshot_copy_android_phone_05_subheadline: "Меняйте компоновку, скрывайте ненужные
-  детали."
-screenshot_copy_android_phone_05_compact_label: "Компактный список"
-screenshot_copy_android_phone_05_rich_cards_label: "Карточки"
+﻿screenshot_copy_android_phone_01_headline: "ÐŸÑ€Ð¾ÑÑ‚Ð¾ ÑÐ¿Ð¸ÑÐ¾Ðº."
+screenshot_copy_android_phone_01_subheadline: "Ð§Ð¸ÑÑ‚Ñ‹Ð¹ RSS-Ñ‡Ð¸Ñ‚Ð°Ð»ÐºÐ° Ð´Ð»Ñ ÑÐ¾ÑÑ€ÐµÐ´Ð¾Ñ‚Ð¾Ñ‡ÐµÐ½Ð½Ð¾Ð³Ð¾
+  Ñ‡Ñ‚ÐµÐ½Ð¸Ñ."
+screenshot_copy_android_phone_02_headline: "Ð§Ð¸Ñ‚Ð°Ð¹Ñ‚Ðµ Ð¿Ð¾-ÑÐ²Ð¾ÐµÐ¼Ñƒ"
+screenshot_copy_android_phone_02_subheadline: "Ð ÐµÐ¶Ð¸Ð¼ Ñ‡Ñ‚ÐµÐ½Ð¸Ñ â€” Ñ‡Ð¸Ñ‰Ðµ, Ð±ÐµÐ· Ð¾Ñ‚Ð²Ð»ÐµÐºÐ°ÑŽÑ‰Ð¸Ñ…
+  Ñ„Ð°ÐºÑ‚Ð¾Ñ€Ð¾Ð²."
+screenshot_copy_android_phone_03_headline: "ÐŸÐ¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°Ð¹Ñ‚Ðµ Ð¿Ð¾Ñ€ÑÐ´Ð¾Ðº"
+screenshot_copy_android_phone_03_subheadline: "Ð¡Ñ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð½ÐµÐ¿Ñ€Ð¾Ñ‡Ð¸Ñ‚Ð°Ð½Ð½Ñ‹Ñ…, Ð·Ð°ÐºÐ»Ð°Ð´ÐºÐ¸ Ð¸
+  ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¸ â€” Ð²ÑÑ‘ Ð¿Ð¾Ð´ Ñ€ÑƒÐºÐ¾Ð¹."
+screenshot_copy_android_phone_04_headline: "Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€ÑƒÐ¹Ñ‚Ðµ Ð¿Ð¾-ÑÐ²Ð¾ÐµÐ¼Ñƒ"
+screenshot_copy_android_phone_04_subheadline: "Dropbox, Drive, FreshRSS, Feedbin Ð¸
+  Ð´Ñ€ÑƒÐ³Ð¸Ðµ."
+screenshot_copy_android_phone_05_headline: "ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹Ñ‚Ðµ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¿Ð¾Ð´ ÑÐµÐ±Ñ"
+screenshot_copy_android_phone_05_subheadline: "ÐœÐµÐ½ÑÐ¹Ñ‚Ðµ ÐºÐ¾Ð¼Ð¿Ð¾Ð½Ð¾Ð²ÐºÑƒ, ÑÐºÑ€Ñ‹Ð²Ð°Ð¹Ñ‚Ðµ Ð½ÐµÐ½ÑƒÐ¶Ð½Ñ‹Ðµ
+  Ð´ÐµÑ‚Ð°Ð»Ð¸."
+screenshot_copy_android_phone_05_compact_label: "ÐšÐ¾Ð¼Ð¿Ð°ÐºÑ‚Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº"
+screenshot_copy_android_phone_05_rich_cards_label: "ÐšÐ°Ñ€Ñ‚Ð¾Ñ‡ÐºÐ¸"
 screenshot_copy_android_phone_feature_graphic_headline: |-
-  Читай свои 
-  ленты,
-  а не всякий
-  мусор
+  Ð§Ð¸Ñ‚Ð°Ð¹ ÑÐ²Ð¾Ð¸ 
+  Ð»ÐµÐ½Ñ‚Ñ‹,
+  Ð° Ð½Ðµ Ð²ÑÑÐºÐ¸Ð¹
+  Ð¼ÑƒÑÐ¾Ñ€
 
-screenshot_copy_android_tablet_01_headline: "Просто список."
-screenshot_copy_android_tablet_01_subheadline: "Чистый RSS-ридер для сосредоточенного
-  чтения."
-screenshot_copy_android_tablet_02_headline: "Читайте по-своему"
-screenshot_copy_android_tablet_02_subheadline: "Режим чтения — чище, без отвлекающих
-  факторов."
-screenshot_copy_android_tablet_03_headline: "Поддерживайте порядок"
-screenshot_copy_android_tablet_03_subheadline: "Счётчики непрочитанных, закладки и
-  категории — всё под рукой."
-screenshot_copy_android_tablet_04_headline: "Синхронизируйте по-своему"
+screenshot_copy_android_tablet_01_headline: "ÐŸÑ€Ð¾ÑÑ‚Ð¾ ÑÐ¿Ð¸ÑÐ¾Ðº."
+screenshot_copy_android_tablet_01_subheadline: "Ð§Ð¸ÑÑ‚Ñ‹Ð¹ RSS-Ñ€Ð¸Ð´ÐµÑ€ Ð´Ð»Ñ ÑÐ¾ÑÑ€ÐµÐ´Ð¾Ñ‚Ð¾Ñ‡ÐµÐ½Ð½Ð¾Ð³Ð¾
+  Ñ‡Ñ‚ÐµÐ½Ð¸Ñ."
+screenshot_copy_android_tablet_02_headline: "Ð§Ð¸Ñ‚Ð°Ð¹Ñ‚Ðµ Ð¿Ð¾-ÑÐ²Ð¾ÐµÐ¼Ñƒ"
+screenshot_copy_android_tablet_02_subheadline: "Ð ÐµÐ¶Ð¸Ð¼ Ñ‡Ñ‚ÐµÐ½Ð¸Ñ â€” Ñ‡Ð¸Ñ‰Ðµ, Ð±ÐµÐ· Ð¾Ñ‚Ð²Ð»ÐµÐºÐ°ÑŽÑ‰Ð¸Ñ…
+  Ñ„Ð°ÐºÑ‚Ð¾Ñ€Ð¾Ð²."
+screenshot_copy_android_tablet_03_headline: "ÐŸÐ¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°Ð¹Ñ‚Ðµ Ð¿Ð¾Ñ€ÑÐ´Ð¾Ðº"
+screenshot_copy_android_tablet_03_subheadline: "Ð¡Ñ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð½ÐµÐ¿Ñ€Ð¾Ñ‡Ð¸Ñ‚Ð°Ð½Ð½Ñ‹Ñ…, Ð·Ð°ÐºÐ»Ð°Ð´ÐºÐ¸ Ð¸
+  ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¸ â€” Ð²ÑÑ‘ Ð¿Ð¾Ð´ Ñ€ÑƒÐºÐ¾Ð¹."
+screenshot_copy_android_tablet_04_headline: "Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€ÑƒÐ¹Ñ‚Ðµ Ð¿Ð¾-ÑÐ²Ð¾ÐµÐ¼Ñƒ"
 screenshot_copy_android_tablet_04_subheadline: "Dropbox, Drive, FreshRSS, Feedbin
-  и другие."
-screenshot_copy_android_tablet_05_headline: "Настройте список под себя"
-screenshot_copy_android_tablet_05_subheadline: "Меняйте компоновку, скрывайте ненужные
-  детали."
-screenshot_copy_android_tablet_05_compact_label: "Компактный список"
-screenshot_copy_android_tablet_05_rich_cards_label: "Карточки"
+  Ð¸ Ð´Ñ€ÑƒÐ³Ð¸Ðµ."
+screenshot_copy_android_tablet_05_headline: "ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹Ñ‚Ðµ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¿Ð¾Ð´ ÑÐµÐ±Ñ"
+screenshot_copy_android_tablet_05_subheadline: "ÐœÐµÐ½ÑÐ¹Ñ‚Ðµ ÐºÐ¾Ð¼Ð¿Ð¾Ð½Ð¾Ð²ÐºÑƒ, ÑÐºÑ€Ñ‹Ð²Ð°Ð¹Ñ‚Ðµ Ð½ÐµÐ½ÑƒÐ¶Ð½Ñ‹Ðµ
+  Ð´ÐµÑ‚Ð°Ð»Ð¸."
+screenshot_copy_android_tablet_05_compact_label: "ÐšÐ¾Ð¼Ð¿Ð°ÐºÑ‚Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº"
+screenshot_copy_android_tablet_05_rich_cards_label: "ÐšÐ°Ñ€Ñ‚Ð¾Ñ‡ÐºÐ¸"
 
-screenshot_copy_iphone_01_headline: "Просто список."
-screenshot_copy_iphone_01_subheadline: "Чистый RSS-читалка для сосредоточенного чтения."
-screenshot_copy_iphone_02_headline: "Читайте по-своему"
-screenshot_copy_iphone_02_subheadline: "Режим чтения — чище, без отвлекающих факторов."
-screenshot_copy_iphone_03_headline: "Поддерживайте порядок"
-screenshot_copy_iphone_03_subheadline: "Счётчики непрочитанных, закладки и категории
-  — всё под рукой."
-screenshot_copy_iphone_04_headline: "Синхронизируйте по-своему"
-screenshot_copy_iphone_04_subheadline: "iCloud, Dropbox, Drive, FreshRSS, Feedbin
-  и другие."
-screenshot_copy_iphone_05_headline: "Настройте список под себя"
-screenshot_copy_iphone_05_subheadline: "Меняйте компоновку, скрывайте ненужные детали."
-screenshot_copy_iphone_05_compact_label: "Компактный список"
-screenshot_copy_iphone_05_rich_cards_label: "Карточки"
+  â€” Ð²ÑÑ‘ Ð¿Ð¾Ð´ Ñ€ÑƒÐºÐ¾Ð¹."
+  Ð¸ Ð´Ñ€ÑƒÐ³Ð¸Ðµ."
 
-screenshot_copy_ipad_01_headline: "Просто список."
-screenshot_copy_ipad_01_subheadline: "Чистый RSS-читалка для сосредоточенного чтения."
-screenshot_copy_ipad_02_headline: "Читайте по-своему"
-screenshot_copy_ipad_02_subheadline: "Режим чтения — чище, без отвлекающих факторов."
-screenshot_copy_ipad_03_headline: "Поддерживайте порядок"
-screenshot_copy_ipad_03_subheadline: "Счётчики непрочитанных, закладки и папки — всё
-  под рукой."
-screenshot_copy_ipad_04_headline: "Синхронизируйте по-своему"
-screenshot_copy_ipad_04_subheadline: "iCloud, Dropbox, Drive, FreshRSS, Feedbin и
-  другие."
-screenshot_copy_ipad_05_headline: "Настройте список под себя"
-screenshot_copy_ipad_05_subheadline: "Меняйте компоновку, скрывайте ненужные детали."
-screenshot_copy_ipad_05_compact_label: "Компактный список"
-screenshot_copy_ipad_05_rich_cards_label: "Карточки"
+  Ð¿Ð¾Ð´ Ñ€ÑƒÐºÐ¾Ð¹."
+  Ð´Ñ€ÑƒÐ³Ð¸Ðµ."
 
-screenshot_copy_macos_01_headline: "Три панели"
-screenshot_copy_macos_01_subheadline: "Просматривайте, выбирайте и читайте быстро
-  на большом экране."
-screenshot_copy_macos_02_headline: "Читайте по-своему"
-screenshot_copy_macos_02_subheadline: "Режим чтения в главной панели держит длинные
-  тексты чистыми."
-screenshot_copy_macos_03_headline: "Синхронизируйте по-своему"
-screenshot_copy_macos_03_subheadline: "Храните локально или синхронизируйте с хранилищами
-  и сервисами."
-screenshot_copy_macos_04_headline: "Настройте список под себя"
-screenshot_copy_macos_04_subheadline: "Регулируйте плотность, компоновку и видимые
-  детали."
-screenshot_copy_macos_04_compact_label: "Компактный список"
-screenshot_copy_macos_04_rich_cards_label: "Карточки"
+  Ð½Ð° Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð¼ ÑÐºÑ€Ð°Ð½Ðµ."
+  Ñ‚ÐµÐºÑÑ‚Ñ‹ Ñ‡Ð¸ÑÑ‚Ñ‹Ð¼Ð¸."
+  Ð¸ ÑÐµÑ€Ð²Ð¸ÑÐ°Ð¼Ð¸."
+  Ð´ÐµÑ‚Ð°Ð»Ð¸."
 
-screenshot_copy_windows_01_caption: "Просматривайте, выбирайте и читайте в быстрой
-  трёхпанельной компоновке."
-screenshot_copy_windows_02_caption: "Режим чтения без мусора с улучшенными отступами
-  и навигацией."
-screenshot_copy_windows_03_caption: "Выбирайте локальное хранение или синхронизацию
-  через сервисы под ваш процесс."
-screenshot_copy_windows_04_caption: "Настраивайте компоновку, плотность и видимые
-  детали."
+  Ñ‚Ñ€Ñ‘Ñ…Ð¿Ð°Ð½ÐµÐ»ÑŒÐ½Ð¾Ð¹ ÐºÐ¾Ð¼Ð¿Ð¾Ð½Ð¾Ð²ÐºÐµ."
+  Ð¸ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸ÐµÐ¹."
+  Ñ‡ÐµÑ€ÐµÐ· ÑÐµÑ€Ð²Ð¸ÑÑ‹ Ð¿Ð¾Ð´ Ð²Ð°Ñˆ Ð¿Ñ€Ð¾Ñ†ÐµÑÑ."
+  Ð´ÐµÑ‚Ð°Ð»Ð¸."

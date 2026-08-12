@@ -5,7 +5,11 @@ import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.FeedSource
 import com.prof18.feedflow.core.model.FeedSourceCategory
 import com.prof18.feedflow.core.model.FeedSourceSettings
+import com.prof18.feedflow.core.model.FlowPace
+import com.prof18.feedflow.core.model.RateLimit
+import com.prof18.feedflow.core.model.SourcePresentation
 import com.prof18.feedflow.core.model.SyncAccounts
+import com.prof18.feedflow.core.model.VoiceStatus
 import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.feedsync.networkcore.NetworkSettings
 import com.prof18.feedflow.shared.domain.model.FeedEditedState
@@ -128,6 +132,11 @@ class EditFeedViewModelTest : KoinTestBase() {
         viewModel.updateIsPinned(true)
         viewModel.updateIsNotificationEnabled(true)
         viewModel.updateIsHideImagesEnabled(true)
+        viewModel.updateSourceFlowPace(FlowPace.SLOW)
+        viewModel.updateMutedForHours(24)
+        viewModel.updateVoiceStatus(VoiceStatus.VOICE)
+        viewModel.updateSourcePresentation(SourcePresentation.WEB_COMIC)
+        viewModel.updateRateLimit(RateLimit.THREE_PER_DAY)
         advanceUntilIdle()
 
         viewModel.feedEditedState.test {
@@ -144,6 +153,11 @@ class EditFeedViewModelTest : KoinTestBase() {
         assertEquals(true, updatedFeedSource.isPinned)
         assertEquals(true, updatedFeedSource.isNotificationEnabled)
         assertEquals(true, updatedFeedSource.isHideImagesEnabled)
+        assertEquals(FlowPace.SLOW, updatedFeedSource.flowPace)
+        assertEquals(86_500_000L, updatedFeedSource.mutedUntilMillis)
+        assertEquals(VoiceStatus.VOICE, updatedFeedSource.voiceStatus)
+        assertEquals(SourcePresentation.WEB_COMIC, updatedFeedSource.sourcePresentation)
+        assertEquals(RateLimit.THREE_PER_DAY, updatedFeedSource.rateLimit)
     }
 
     @Test

@@ -6,4 +6,9 @@ data class FeedSourceSettings(
     val isPinned: Boolean = false,
     val isNotificationEnabled: Boolean = false,
     val isHideImagesEnabled: Boolean = false,
+    val flowPace: FlowPace? = null,
+    val mutedUntilMillis: Long? = null,
+    val voiceStatus: VoiceStatus = VoiceStatus.AUTOMATIC,
+    val sourcePresentation: SourcePresentation = SourcePresentation.STANDARD,
+    val rateLimit: RateLimit = RateLimit.NONE,
 )

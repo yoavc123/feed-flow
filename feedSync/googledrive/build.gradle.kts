@@ -8,13 +8,7 @@ kotlin {
         namespace = "com.prof18.feedflow.feedsync.googledrive"
     }
 
-    applyDefaultHierarchyTemplate()
-
     sourceSets {
-        matching { it.name.startsWith("ios") }.all {
-            languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
-        }
-
         commonMain {
             dependencies {
                 implementation(project(":core"))
@@ -27,29 +21,8 @@ kotlin {
             }
         }
 
-        val commonJvmAndroidMain by creating {
-            dependsOn(commonMain.get())
-        }
-
-        androidMain {
-            dependsOn(commonJvmAndroidMain)
-        }
-
-        jvmMain {
-            dependsOn(commonJvmAndroidMain)
-
-            dependencies {
-                implementation(libs.google.api.client)
-                // Handles "Open Browser" auth
-                implementation(libs.google.oauth.client.jetty)
-                implementation(libs.google.api.services.drive)
-            }
-        }
-
-        jvmTest {
-            dependencies {
-                implementation(kotlin("test"))
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
 }

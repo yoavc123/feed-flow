@@ -6,6 +6,8 @@ import co.touchlab.kermit.Severity
 import co.touchlab.kermit.StaticConfig
 import com.prof18.feedflow.core.domain.DateFormatter
 import com.prof18.feedflow.core.domain.FeedSourceLogoRetriever
+import com.prof18.feedflow.core.domain.SystemTimeProvider
+import com.prof18.feedflow.core.domain.TimeProvider
 import com.prof18.feedflow.core.utils.AppConfig
 import com.prof18.feedflow.core.utils.AppEnvironment
 import com.prof18.feedflow.core.utils.DispatcherProvider
@@ -16,7 +18,6 @@ import com.prof18.feedflow.feedsync.dropbox.di.dropboxModule
 import com.prof18.feedflow.feedsync.feedbin.di.getFeedbinModule
 import com.prof18.feedflow.feedsync.googledrive.di.googleDriveModule
 import com.prof18.feedflow.feedsync.greader.di.getGReaderModule
-import com.prof18.feedflow.feedsync.icloud.ICloudSettings
 import com.prof18.feedflow.shared.data.FeedAppearanceSettingsRepository
 import com.prof18.feedflow.shared.data.ReviewRepository
 import com.prof18.feedflow.shared.data.SettingsRepository
@@ -183,6 +184,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             feedAppearanceSettingsRepository = get(),
             feedStateRepository = get(),
             feedItemParserWorker = get(),
+            feedItemContentFileHandler = get(),
         )
     }
 
@@ -217,6 +219,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             feedFontSizeRepository = get(),
             feedCategoryRepository = get(),
             feedStateRepository = get(),
+            databaseHelper = get(),
             feedFetcherRepository = get(),
             getNextFeedFilterOrNullUseCase = get(),
         )
@@ -300,6 +303,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
     viewModel {
         ExtrasSettingsViewModel(
             settingsRepository = get(),
+            databaseHelper = get(),
         )
     }
 
@@ -356,6 +360,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             feedAppearanceSettingsRepository = get(),
             feedFontSizeRepository = get(),
             feedStateRepository = get(),
+            databaseHelper = get(),
         )
     }
 
@@ -375,6 +380,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             feedStateRepository = get(),
             databaseHelper = get(),
             feedContentPreparer = get(),
+            timeProvider = get(),
         )
     }
 
@@ -455,10 +461,8 @@ private fun getCoreModule(appConfig: AppConfig) = module {
 
     single {
         AccountsRepository(
-            currentOS = get(),
             dropboxSettings = get(),
             googleDriveSettings = get(),
-            icloudSettings = get(),
             appConfig = appConfig,
             gReaderRepository = get(),
             networkSettings = get(),
@@ -469,12 +473,6 @@ private fun getCoreModule(appConfig: AppConfig) = module {
 
     factoryOf(::FeedCategoryRepository)
 
-    factory {
-        ICloudSettings(
-            settings = get(),
-        )
-    }
-
     viewModel {
         EditFeedViewModel(
             categoryUseCase = get(),
@@ -482,6 +480,7 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             accountsRepository = get(),
             databaseHelper = get(),
             feedStateRepository = get(),
+            timeProvider = get(),
         )
     }
 
@@ -563,12 +562,15 @@ private fun getCoreModule(appConfig: AppConfig) = module {
         )
     }
 
+    single<TimeProvider> { SystemTimeProvider }
+
     single {
         FeedStateRepository(
             databaseHelper = get(),
             settingsRepository = get(),
             feedAppearanceSettingsRepository = get(),
             dateFormatter = get(),
+            timeProvider = get(),
             logger = getWith("FeedStateRepository"),
         )
     }
@@ -584,7 +586,6 @@ private fun getCoreModule(appConfig: AppConfig) = module {
             feedStateRepository = get(),
             dropboxSettings = get(),
             googleDriveSettings = get(),
-            icloudSettings = get(),
             networkSettings = get(),
         )
     }

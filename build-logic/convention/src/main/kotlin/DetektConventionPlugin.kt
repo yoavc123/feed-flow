@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_JAVA
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_SRC_DIR_KOTLIN
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension.Companion.DEFAULT_TEST_SRC_DIR_JAVA
@@ -9,6 +10,7 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 
 class DetektConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -37,6 +39,10 @@ class DetektConventionPlugin : Plugin<Project> {
                     add("detektPlugins", libs.findLibrary("detekt-formatting").get())
                     add("detektPlugins", libs.findLibrary("detekt-compose-rules").get())
                 }
+            }
+
+            tasks.withType<Detekt>().configureEach {
+                jvmTarget = "21"
             }
         }
     }

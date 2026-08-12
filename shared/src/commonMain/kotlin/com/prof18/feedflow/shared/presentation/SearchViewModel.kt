@@ -10,6 +10,7 @@ import com.prof18.feedflow.core.model.FeedItemDisplaySettings
 import com.prof18.feedflow.core.model.FeedItemId
 import com.prof18.feedflow.core.model.SearchFilter
 import com.prof18.feedflow.core.model.SearchState
+import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.shared.data.FeedAppearanceSettingsRepository
 import com.prof18.feedflow.shared.domain.feed.FeedActionsRepository
 import com.prof18.feedflow.shared.domain.feed.FeedFontSizeRepository
@@ -44,6 +45,7 @@ class SearchViewModel internal constructor(
     private val feedFontSizeRepository: FeedFontSizeRepository,
     private val feedStateRepository: FeedStateRepository,
     private val feedAppearanceSettingsRepository: FeedAppearanceSettingsRepository,
+    private val databaseHelper: DatabaseHelper,
 ) : ViewModel() {
 
     private val searchMutableState: MutableStateFlow<SearchState> = MutableStateFlow(SearchState.EmptyState)
@@ -210,6 +212,20 @@ class SearchViewModel internal constructor(
 
     private fun search(query: String) {
         val currentSearchFilter = searchFilterMutableState.value
+        if (currentSearchFilter == SearchFilter.History) {
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
+                val history = databaseHelper.searchReadingHistory(query).toImmutableList()
+                searchMutableState.update {
+                    if (history.isEmpty()) {
+                        SearchState.NoDataFound(searchQuery = query)
+                    } else {
+                        SearchState.HistoryFound(history)
+                    }
+                }
+            }
+            return
+        }
         val feedFilter = currentSearchFilter.toFeedFilter()
         searchJob?.cancel()
         searchJob = feedActionsRepository
@@ -246,30 +262,42 @@ class SearchViewModel internal constructor(
             SearchFilter.CurrentFeed -> currentSearchContextFeedFilter
             SearchFilter.Read -> FeedFilter.Read
             SearchFilter.Bookmarks -> FeedFilter.Bookmarks
+            SearchFilter.History -> null
         }
     }
 
     private fun FeedFilter.toSearchFilter(): SearchFilter {
         return when (this) {
             is FeedFilter.Bookmarks -> SearchFilter.Bookmarks
+            FeedFilter.Saved -> SearchFilter.Bookmarks
             is FeedFilter.Read -> SearchFilter.Read
             is FeedFilter.Category,
+            is FeedFilter.Stream,
             is FeedFilter.Source,
             FeedFilter.Uncategorized,
+            FeedFilter.UncategorizedStream,
+            FeedFilter.Voices,
             -> SearchFilter.CurrentFeed
-            FeedFilter.Timeline -> SearchFilter.All
+            FeedFilter.Timeline,
+            FeedFilter.Flow,
+            -> SearchFilter.All
         }
     }
 
     private fun FeedFilter.toSearchFeedFilter(): FeedFilter? {
         return when (this) {
             is FeedFilter.Category,
+            is FeedFilter.Stream,
             is FeedFilter.Source,
             FeedFilter.Uncategorized,
+            FeedFilter.UncategorizedStream,
+            FeedFilter.Voices,
             -> this
             FeedFilter.Timeline,
+            FeedFilter.Flow,
             FeedFilter.Read,
             FeedFilter.Bookmarks,
+            FeedFilter.Saved,
             -> null
         }
     }

@@ -72,6 +72,7 @@ class FeedActionsRepositoryFreshRssTest : KoinTestBase() {
             pageSize = 10,
             showReadItems = true,
             sortOrder = FeedOrder.NEWEST_FIRST,
+            currentTimeMillis = 100_000L,
         )
         itemIds.forEach { itemId ->
             val item = updatedItems.find { it.url_hash == itemId.id }
@@ -194,6 +195,7 @@ class FeedActionsRepositoryFreshRssTest : KoinTestBase() {
             pageSize = 10,
             showReadItems = true,
             sortOrder = FeedOrder.NEWEST_FIRST,
+            currentTimeMillis = 100_000L,
         )
         feedItems.forEach { feedItem ->
             val item = updatedItems.find { it.url_hash == feedItem.id }

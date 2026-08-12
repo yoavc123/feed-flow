@@ -2,31 +2,12 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      platforms:
-        description: 'Platforms to build for prerelease'
-        required: true
-        type: choice
-        options:
-          - all
-          - android
-          - ios
-          - linux
-          - windows
-          - macos
-        default: 'all'
   push:
     tags:
-      - '*-all'
       - '*-android'
-      - '*-ios'
-      - '*-macos'
-      - '*-linux'
-      - '*-windows'
 
 jobs:
   android:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'android')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-android')))
     uses: ./.github/workflows/android-release.yml
     secrets:
       GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
@@ -41,7 +22,7 @@ jobs:
 
   fdroid-release:
     needs: android
-    if: github.event_name == 'push' && always() && needs.android.result == 'success' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-android'))
+    if: github.event_name == 'push' && needs.android.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,141 +41,9 @@ jobs:
           MAJOR=$(grep "MAJOR=" version.properties | cut -d'=' -f2)
           MINOR=$(grep "MINOR=" version.properties | cut -d'=' -f2)
           PATCH=$(grep "PATCH=" version.properties | cut -d'=' -f2)
-          VERSION_NAME="$MAJOR.$MINOR.$PATCH"
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION_NAME=$MAJOR.$MINOR.$PATCH" >> "$GITHUB_OUTPUT"
 
-      - name: Create F-Droid release branch
-        run: |
-          git checkout -b "release-fdroid-${{ steps.version.outputs.VERSION_NAME }}"
-
-      - name: Update version in build.gradle.kts
-        run: |
-          VERSION_CODE=$(( ${{ github.run_number }} + 6000 ))
-          echo $VERSION_CODE
-          sed -i "s/versionCode = appVersionCode()/versionCode = $VERSION_CODE/" ./androidApp/build.gradle.kts
-          sed -i "s/versionName = appVersionName()/versionName = \"${{ steps.version.outputs.VERSION_NAME }}\"/" ./androidApp/build.gradle.kts
-        env:
-          VERSION: ${{ steps.version.outputs.version }}  
-
-      - name: Commit changes
-        run: |
-          git add androidApp/build.gradle.kts
-          git commit -m "Release for fdroid: ${{ steps.version.outputs.VERSION_NAME }}"
-
-      - name: Create and push tag
+      - name: Create F-Droid release tag
         run: |
           git tag "${{ steps.version.outputs.VERSION_NAME }}-fdroid"
           git push origin "${{ steps.version.outputs.VERSION_NAME }}-fdroid"
-
-  ios:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'ios')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-ios')))
-    uses: ./.github/workflows/ios-release.yml
-    secrets:
-      GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-      DROPBOX_API_KEY: ${{ secrets.DROPBOX_API_KEY }}
-      GID_CLIENT_ID: ${{ secrets.GID_CLIENT_ID_IOS }}
-      GID_REVERSED_CLIENT_ID: ${{ secrets.GID_REVERSED_CLIENT_ID_IOS }}
-      FIREBASE_PLIST: ${{ secrets.FIREBASE_PLIST }}
-      CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
-      CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
-      CERTIFICATES_DEV_P12: ${{ secrets.CERTIFICATES_DEV_P12 }}
-      BUNDLE_ID: ${{ secrets.BUNDLE_ID }}
-      APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-      APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-      APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
-      APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
-
-  windows:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'windows')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-windows')))
-    uses: ./.github/workflows/windows-release.yml
-    secrets:
-      GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-      DROPBOX_API_KEY: ${{ secrets.DROPBOX_API_KEY }}
-      SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
-      MSIX_PUBLISHER_DISPLAY_NAME: ${{ secrets.MSIX_PUBLISHER_DISPLAY_NAME }}
-      TDECK_SALT: ${{ secrets.TDECK_SALT }}
-      TDECK_APP_ID: ${{ secrets.TDECK_APP_ID }}
-      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON_DESKTOP }}
-      MS_STORE_TENANT_ID: ${{ secrets.MS_STORE_TENANT_ID }}
-      MS_STORE_CLIENT_ID: ${{ secrets.MS_STORE_CLIENT_ID }}
-      MS_STORE_CLIENT_SECRET: ${{ secrets.MS_STORE_CLIENT_SECRET }}
-      MS_STORE_APP_ID: ${{ secrets.MS_STORE_APP_ID }}
-      
-  linux:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'linux')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-linux')))
-    uses: ./.github/workflows/linux-release.yml
-    secrets:
-      GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-      DROPBOX_API_KEY: ${{ secrets.DROPBOX_API_KEY }}
-      SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
-      TDECK_SALT: ${{ secrets.TDECK_SALT }}
-      TDECK_APP_ID: ${{ secrets.TDECK_APP_ID }}
-      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON_DESKTOP }}
-
-  macos-testflight:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'macos')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-macos')))
-    uses: ./.github/workflows/macos-testflight-release.yml
-    secrets:
-      GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-      DROPBOX_API_KEY: ${{ secrets.DROPBOX_API_KEY }}
-      SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
-      MAC_APP_DISTRIBUTION_INSTALLER_CERTIFICATE: ${{ secrets.MAC_APP_DISTRIBUTION_INSTALLER_CERTIFICATE }}
-      MAC_APP_DISTRIBUTION_INSTALLER_CERTIFICATE_PWD: ${{ secrets.MAC_APP_DISTRIBUTION_INSTALLER_CERTIFICATE_PWD }}
-      EMBEDDED_PROVISION: ${{ secrets.EMBEDDED_PROVISION }}
-      RUNTIME_PROVISION: ${{ secrets.RUNTIME_PROVISION }}
-      APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-      APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-      APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
-      APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
-      NOTARIZATION_PWD: ${{ secrets.NOTARIZATION_PWD }}
-      APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
-      TDECK_SALT: ${{ secrets.TDECK_SALT }}
-      TDECK_APP_ID: ${{ secrets.TDECK_APP_ID }}
-      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON_DESKTOP }}
-
-  macos:
-    if: (github.event_name == 'workflow_dispatch' && (github.event.inputs.platforms == 'all' || github.event.inputs.platforms == 'macos')) || (github.event_name == 'push' && (endsWith(github.ref, '-all') || endsWith(github.ref, '-macos')))
-    uses: ./.github/workflows/macos-release.yml
-    secrets:
-      GRADLE_CACHE_ENCRYPTION_KEY: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-      DROPBOX_API_KEY: ${{ secrets.DROPBOX_API_KEY }}
-      SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
-      SIGNING_CERTIFICATE_P12_DATA_MACOS: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA_MACOS }}
-      SIGNING_CERTIFICATE_PASSWORD_MACOS: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD_MACOS }}
-      APPLE_ID_NOTARIZATION: ${{ secrets.APPLE_ID_NOTARIZATION }}
-      NOTARIZATION_PWD: ${{ secrets.NOTARIZATION_PWD }}
-      APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
-      TDECK_SALT: ${{ secrets.TDECK_SALT }}
-      TDECK_APP_ID: ${{ secrets.TDECK_APP_ID }}
-      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON_DESKTOP }}
-
-  create-release:
-    needs: [windows, linux, macos]
-    if: github.event_name == 'push' && always() && (needs.windows.result == 'success' || needs.linux.result == 'success' || needs.macos.result == 'success') && (endsWith(github.ref, '-all') || endsWith(github.ref, '-windows') || endsWith(github.ref, '-linux') || endsWith(github.ref, '-macos'))
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-        with:
-          merge-multiple: true
-
-      - name: List artifacts
-        run: ls -R
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            *.dmg
-            *.msi
-            *.rpm
-            *.deb
-            *.AppImage
-            *.AppImage.sha256
-          draft: true
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

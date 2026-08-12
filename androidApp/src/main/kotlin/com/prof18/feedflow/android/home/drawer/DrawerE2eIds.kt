@@ -6,6 +6,7 @@ internal object DrawerE2eIds {
     const val TIMELINE = "drawer_timeline"
     const val READ = "drawer_read"
     const val BOOKMARKS = "drawer_bookmarks"
+    const val VOICES = "drawer_voices"
     const val PINNED_REORDER_TOGGLE = "drawer_pinned_reorder_toggle"
     const val FEED_SOURCES_REORDER_TOGGLE = "drawer_feed_sources_reorder_toggle"
     const val CATEGORY_MENU_RENAME = "drawer_category_menu_rename"

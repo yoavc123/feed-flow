@@ -10,7 +10,7 @@ on:
 
 jobs:
   checks:
-    runs-on: macos-26
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
@@ -23,23 +23,13 @@ jobs:
       - name: Refresh translations
         run: bash .scripts/refresh-translations.sh
 
-      - name: Install Swift Lint
-        run: |
-          brew install swiftlint
-
-      - name: Run Swift Lint
-        run: |
-          cd iosApp
-          /opt/homebrew/bin/swiftlint
-          cd ..
-
       - name: Create dummy Firebase json
         run: |
           cp config/dummy-google-services.json androidApp/src/debug/google-services.json
           cp config/dummy-google-services.json androidApp/src/release/google-services.json
 
       - name: Run Checks
-        run: ./gradlew detekt allTests
+        run: ./gradlew --quiet --console=plain detekt allTests
 
       - name: Upload reports
         if: failure()
@@ -71,76 +61,4 @@ jobs:
           cp config/dummy-google-services.json androidApp/src/release/google-services.json 
 
       - name: Build Android Sample
-        run: ./gradlew :androidApp:assembleGooglePlayDebug
-
-  build-desktop-app:
-    name: Build Desktop App
-    runs-on: ubuntu-latest
-    needs: [ checks ]
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-gradle
-        with:
-          gradle-cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Refresh translations
-        run: bash .scripts/refresh-translations.sh
-
-      - name: Build Desktop App
-        run: ./gradlew :desktopApp:packageDistributionForCurrentOS
-
-  build-ios-app:
-    name: Build iOS App
-    runs-on: macos-26
-    needs: [ checks ]
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Xcode version
-        run: |
-          /usr/bin/xcodebuild -version   
-
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.2'
-
-      - name: Xcode version
-        run: |
-          /usr/bin/xcodebuild -version 
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-gradle
-        with:
-          gradle-cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Refresh translations
-        run: bash .scripts/refresh-translations.sh
-
-      - name: Create Dummy Firebase Plist
-        run: |
-          cp config/dummy-google-service.plist iosApp/dummy-google-service.plist
-          mv iosApp/dummy-google-service.plist iosApp/GoogleService-Info-dev.plist
-          cp config/dummy-google-service.plist iosApp/dummy-google-service.plist
-          mv iosApp/dummy-google-service.plist iosApp/GoogleService-Info.plist
-
-      - name: Create Config xcconfig
-        run: |
-          cp config/dummy-config.xcconfig iosApp/Assets/Config.xcconfig
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate Xcode project
-        run: |
-          cd iosApp
-          ./.scripts/generate-project.sh
-
-      - name: Build iOS Sample
-        run: |
-          set -o pipefail
-          cd iosApp
-          xcodebuild -project FeedFlow.xcodeproj -configuration Debug -scheme FeedFlow -sdk iphonesimulator -destination "generic/platform=iOS Simulator" ARCHS=arm64 ONLY_ACTIVE_ARCH=YES build | xcbeautify --renderer github-actions
+        run: ./gradlew --quiet --console=plain :androidApp:assembleGooglePlayDebug

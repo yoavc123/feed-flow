@@ -13,6 +13,7 @@ import com.prof18.feedflow.core.model.FeedLayout
 import com.prof18.feedflow.core.model.FeedOrder
 import com.prof18.feedflow.core.model.FeedSource
 import com.prof18.feedflow.core.model.FeedSourceCategory
+import com.prof18.feedflow.core.model.FlowPace
 import com.prof18.feedflow.core.model.NotificationMode
 import com.prof18.feedflow.core.model.ParsedFeedSource
 import com.prof18.feedflow.core.model.ReaderModeDefaults
@@ -23,7 +24,6 @@ import com.prof18.feedflow.core.model.ThemeMode
 import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.feedsync.dropbox.DropboxSettings
 import com.prof18.feedflow.feedsync.googledrive.GoogleDriveSettings
-import com.prof18.feedflow.feedsync.icloud.ICloudSettings
 import com.prof18.feedflow.feedsync.networkcore.NetworkSettings
 import com.prof18.feedflow.shared.data.FeedAppearanceSettingsRepository
 import com.prof18.feedflow.shared.data.SettingsRepository
@@ -32,6 +32,7 @@ import com.prof18.feedflow.shared.domain.feeditem.FeedItemContentFileHandler
 import com.prof18.feedflow.shared.domain.feedsync.AccountsRepository
 import com.prof18.feedflow.shared.domain.feedsync.FeedSyncRepository
 import com.prof18.feedflow.shared.domain.model.SyncPeriod
+import kotlin.time.Clock
 
 class E2eSeedRunner internal constructor(
     private val databaseHelper: DatabaseHelper,
@@ -43,7 +44,6 @@ class E2eSeedRunner internal constructor(
     private val feedStateRepository: FeedStateRepository,
     private val dropboxSettings: DropboxSettings,
     private val googleDriveSettings: GoogleDriveSettings,
-    private val icloudSettings: ICloudSettings,
     private val networkSettings: NetworkSettings,
 ) {
     suspend fun reset() {
@@ -52,7 +52,7 @@ class E2eSeedRunner internal constructor(
         accountsRepository.clearAllAccounts()
         feedItemContentFileHandler.clearAllContent()
         applyBaseSettings()
-        feedStateRepository.updateFeedFilter(FeedFilter.Timeline)
+        feedStateRepository.updateFeedFilter(FeedFilter.Flow)
     }
 
     suspend fun seed(
@@ -61,13 +61,13 @@ class E2eSeedRunner internal constructor(
     ) {
         applyBaseSettings()
         if (profile == E2eSeedProfile.EMPTY) {
-            feedStateRepository.updateFeedFilter(FeedFilter.Timeline)
+            feedStateRepository.updateFeedFilter(FeedFilter.Flow)
             return
         }
 
         seedContentRichData()
         applyProfileSettings(profile, account)
-        feedStateRepository.updateFeedFilter(FeedFilter.Timeline)
+        feedStateRepository.updateFeedFilter(FeedFilter.Flow)
     }
 
     suspend fun resetAndSeed(
@@ -96,8 +96,8 @@ class E2eSeedRunner internal constructor(
 
     private fun applyBaseSettings() {
         settingsRepository.clearFavouriteBrowserId()
-        settingsRepository.setMarkFeedAsReadWhenScrolling(true)
-        settingsRepository.setShowReadArticlesTimeline(false)
+        settingsRepository.setMarkFeedAsReadWhenScrolling(false)
+        settingsRepository.setShowReadArticlesTimeline(true)
         settingsRepository.setHideReadItems(false)
         settingsRepository.setArticleOpenMode(ArticleOpenMode.FULL_ARTICLE)
         settingsRepository.setSaveItemContentOnOpen(false)
@@ -116,6 +116,8 @@ class E2eSeedRunner internal constructor(
         )
         settingsRepository.setThemeMode(ThemeMode.SYSTEM)
         settingsRepository.setReduceMotionEnabled(true)
+        settingsRepository.setCalmInsightsEnabled(true)
+        settingsRepository.dismissFlowOnboarding()
         settingsRepository.setRefreshFeedsOnLaunch(false)
         settingsRepository.setNotificationMode(NotificationMode.FEED_SOURCE)
 
@@ -157,6 +159,14 @@ class E2eSeedRunner internal constructor(
                 isPinned = feedSource.isPinned,
                 isNotificationEnabled = feedSource.isNotificationEnabled,
                 isHideImagesEnabled = feedSource.isHideImagesEnabled,
+            )
+            databaseHelper.updateFeedSourceCalmSettings(
+                feedSourceId = feedSource.id,
+                flowPace = FlowPace.STANDARD,
+                mutedUntilMillis = null,
+                voiceStatus = feedSource.voiceStatus,
+                sourcePresentation = feedSource.sourcePresentation,
+                rateLimit = feedSource.rateLimit,
             )
         }
     }
@@ -409,13 +419,6 @@ class E2eSeedRunner internal constructor(
                 googleDriveSettings.setBackupFileId("e2e-google-drive-backup")
             }
 
-            E2eSeedAccount.ICLOUD -> {
-                accountsRepository.setICloudAccount()
-                icloudSettings.setUseICloud(true)
-                icloudSettings.setLastUploadTimestamp(SEED_NOW_MILLIS)
-                icloudSettings.setLastDownloadTimestamp(SEED_NOW_MILLIS)
-            }
-
             E2eSeedAccount.FRESH_RSS -> seedGReaderAccount(SyncAccounts.FRESH_RSS)
             E2eSeedAccount.MINIFLUX -> seedGReaderAccount(SyncAccounts.MINIFLUX)
             E2eSeedAccount.FEEDBIN -> seedFeedbinAccount()
@@ -625,7 +628,7 @@ class E2eSeedRunner internal constructor(
         private const val PINNED_ARTICLE_ID = "e2e-article-pinned"
         private const val DROPBOX_MOCK_CREDENTIALS = """{"access_token":"e2e-dropbox-token"}"""
 
-        private const val SEED_NOW_MILLIS = 1_765_152_000_000L
+        private val SEED_NOW_MILLIS = Clock.System.now().toEpochMilliseconds()
         private const val ONE_HOUR_MILLIS = 3_600_000L
         private const val ONE_DAY_MILLIS = 86_400_000L
         private const val OLD_ARTICLE_OFFSET_MILLIS = ONE_DAY_MILLIS * 90
@@ -914,7 +917,15 @@ class E2eSeedRunner internal constructor(
         private const val READER_SUCCESS_HTML = """
             <article>
               <h1>E2E Reader Mode Success Article</h1>
-              <p>E2E cached reader content loaded from the seed fixture.</p>
+              <p>E2E cached reader content loaded from the seed fixture. This opening paragraph is long enough to make the reading column, line spacing, and top chrome easy to inspect on both a phone and a tablet.</p>
+              <p>The reader should keep prose comfortably wide without pinning it to a narrow phone-sized strip. Scrolling down should move the controls out of the way, while scrolling back up should make the controls available again.</p>
+              <h2>Images keep their shape</h2>
+              <p>Article media should fit inside the reading column without being stretched or cropped. Portrait, landscape, and unusually wide images retain their intrinsic aspect ratio and remain available in the zoomable image viewer.</p>
+              <p>Lazy-loading attributes are common in real feeds and extracted web pages. FeedFlow promotes those attributes into real image sources so the article does not show an empty gap where the publisher intended media.</p>
+              <p>Longer fixtures also exercise reading progress and immersive chrome. The text continues here so the page reliably scrolls on compact displays and gives the toolbar enough movement to react to the reader.</p>
+              <p>Code samples, tables, quotations, and embedded media stay inside the content boundary. Horizontal overflow is contained locally instead of forcing the whole article wider than the viewport.</p>
+              <img data-src="https://static-prod.cdnilpost.com/wp-content/uploads/2026/05/25/680x453/1779707841-GettyImages-113189195.jpg" width="680" height="453" alt="" />
+              <p>The final paragraph leaves enough room below the image for a reader to continue naturally and reach the end without the floating controls covering the last lines.</p>
             </article>
         """
 

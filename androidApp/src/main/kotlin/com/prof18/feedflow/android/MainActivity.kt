@@ -45,6 +45,7 @@ import com.prof18.feedflow.android.editfeed.toEditFeed
 import com.prof18.feedflow.android.editfeed.toFeedSource
 import com.prof18.feedflow.android.feedsourcelist.FeedSourceListScreen
 import com.prof18.feedflow.android.feedsuggestions.FeedSuggestionsScreen
+import com.prof18.feedflow.android.focus.FocusScreen
 import com.prof18.feedflow.android.home.HomeScreen
 import com.prof18.feedflow.android.readermode.ReaderModeScreen
 import com.prof18.feedflow.android.search.SearchScreen
@@ -75,7 +76,6 @@ import com.prof18.feedflow.shared.presentation.EditFeedViewModel
 import com.prof18.feedflow.shared.presentation.HomeViewModel
 import com.prof18.feedflow.shared.presentation.ReaderModeViewModel
 import com.prof18.feedflow.shared.presentation.ReviewViewModel
-import com.prof18.feedflow.shared.presentation.ThemeViewModel
 import com.prof18.feedflow.shared.presentation.model.DeeplinkFeedState
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 import com.prof18.feedflow.shared.ui.utils.LocalReduceMotion
@@ -282,6 +282,18 @@ class MainActivity : BaseThemeActivity() {
                         },
                         onFeedSuggestionsClick = { backStack.add(FeedSuggestions) },
                         onNavigateToNextFeed = { homeViewModel.onNavigateToNextFeed() },
+                        onFocusClick = { backStack.add(Focus) },
+                    )
+                }
+
+                entry<Focus> {
+                    FocusScreen(
+                        homeViewModel = homeViewModel,
+                        navigateBack = navigateBack,
+                        onOpenArticle = { urlInfo ->
+                            readerModeViewModel.getReaderModeHtml(urlInfo)
+                            backStack.add(ReaderMode)
+                        },
                     )
                 }
 
@@ -393,14 +405,12 @@ class MainActivity : BaseThemeActivity() {
                         .collectAsStateWithLifecycle()
                     val canNavigateNext by readerModeViewModel.canNavigateToNextState
                         .collectAsStateWithLifecycle()
-
-                    val themeViewModel = koinViewModel<ThemeViewModel>()
-                    val themeState by themeViewModel.themeState.collectAsStateWithLifecycle()
+                    val readingProgress by readerModeViewModel.readingProgressState
+                        .collectAsStateWithLifecycle()
 
                     ReaderModeScreen(
                         readerModeState = readerModeState,
                         fontSize = fontSettingsState.fontSize,
-                        themeMode = themeState,
                         navigateBack = navigateBack,
                         onUpdateFontSize = { newFontSize ->
                             readerModeViewModel.updateFontSize(newFontSize)
@@ -423,6 +433,8 @@ class MainActivity : BaseThemeActivity() {
                         onToggleContentSource = {
                             readerModeViewModel.toggleContentSource()
                         },
+                        onReadingProgress = readerModeViewModel::updateReadingProgress,
+                        initialReadingProgress = readingProgress?.normalizedFraction,
                     )
                 }
 

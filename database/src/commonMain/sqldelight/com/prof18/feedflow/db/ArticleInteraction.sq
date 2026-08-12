@@ -1,0 +1,23 @@
+CREATE TABLE article_interaction (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    feed_item_id TEXT NOT NULL,
+    feed_source_id TEXT NOT NULL,
+    interaction_type TEXT NOT NULL,
+    occurred_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_article_interaction_source_time
+ON article_interaction(feed_source_id, occurred_at DESC);
+
+insertArticleInteraction:
+INSERT INTO article_interaction(feed_item_id, feed_source_id, interaction_type, occurred_at)
+VALUES (?, ?, ?, ?);
+
+selectInteractionsSince:
+SELECT * FROM article_interaction WHERE occurred_at >= :since ORDER BY occurred_at DESC;
+
+deleteInteractionsBefore:
+DELETE FROM article_interaction WHERE occurred_at < :threshold;
+
+deleteAllInteractions:
+DELETE FROM article_interaction;

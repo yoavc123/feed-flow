@@ -30,8 +30,8 @@ class ReadingBehaviorSettingsViewModelTest : KoinTestBase() {
             assertEquals(ArticleOpenMode.FULL_ARTICLE, initialState.articleOpenMode)
             assertFalse(initialState.isSaveReaderModeContentEnabled)
             assertFalse(initialState.isPrefetchArticleContentEnabled)
-            assertTrue(initialState.isMarkReadWhenScrollingEnabled)
-            assertFalse(initialState.isShowReadItemsEnabled)
+            assertFalse(initialState.isMarkReadWhenScrollingEnabled)
+            assertTrue(initialState.isShowReadItemsEnabled)
             assertFalse(initialState.isHideReadItemsEnabled)
         }
     }
@@ -80,11 +80,11 @@ class ReadingBehaviorSettingsViewModelTest : KoinTestBase() {
         viewModel.state.test {
             awaitItem()
 
-            viewModel.updateMarkReadWhenScrolling(false)
-            assertFalse(awaitItem().isMarkReadWhenScrollingEnabled)
-
             viewModel.updateMarkReadWhenScrolling(true)
             assertTrue(awaitItem().isMarkReadWhenScrollingEnabled)
+
+            viewModel.updateMarkReadWhenScrolling(false)
+            assertFalse(awaitItem().isMarkReadWhenScrollingEnabled)
         }
     }
 
@@ -93,12 +93,12 @@ class ReadingBehaviorSettingsViewModelTest : KoinTestBase() {
         viewModel.state.test {
             awaitItem()
 
+            viewModel.updateShowReadItemsOnTimeline(false)
+            assertFalse(awaitItem().isShowReadItemsEnabled)
+
             viewModel.updateShowReadItemsOnTimeline(true)
             assertTrue(settingsRepository.getShowReadArticlesTimeline())
             assertTrue(awaitItem().isShowReadItemsEnabled)
-
-            viewModel.updateShowReadItemsOnTimeline(false)
-            assertFalse(awaitItem().isShowReadItemsEnabled)
         }
     }
 

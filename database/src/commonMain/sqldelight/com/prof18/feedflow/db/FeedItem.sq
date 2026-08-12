@@ -14,7 +14,9 @@ CREATE TABLE feed_item (
     comments_url TEXT,
     notification_sent INTEGER AS Boolean NOT NULL DEFAULT 0,
     is_blocked INTEGER AS Boolean NOT NULL DEFAULT 0,
-    content_fetched INTEGER AS Boolean NOT NULL DEFAULT 0
+    content_fetched INTEGER AS Boolean NOT NULL DEFAULT 0,
+    author TEXT,
+    first_seen_at INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_feed_item_feed_source_id ON feed_item(feed_source_id);
@@ -23,8 +25,20 @@ CREATE INDEX idx_feed_item_read_blocked ON feed_item(is_read, is_blocked);
 CREATE INDEX idx_feed_item_timeline ON feed_item(feed_source_id, is_read, is_blocked, pub_date DESC);
 
 insertFeedItem:
-INSERT OR IGNORE INTO feed_item(url_hash, url, title, subtitle, content, image_url, feed_source_id, pub_date, comments_url)
-VALUES (?,?,?,?,?,?,?,?, ?);
+INSERT OR IGNORE INTO feed_item(
+    url_hash,
+    url,
+    title,
+    subtitle,
+    content,
+    image_url,
+    feed_source_id,
+    pub_date,
+    comments_url,
+    author,
+    first_seen_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 countFeedItems:
 SELECT COUNT(*) FROM feed_item;
@@ -32,6 +46,13 @@ SELECT COUNT(*) FROM feed_item;
 selectFeedItemContent:
 SELECT content FROM feed_item
 WHERE url_hash = :urlHash;
+
+selectFeedItemForHistory:
+SELECT feed_item.url_hash, feed_item.url, feed_item.title, feed_item.subtitle, feed_item.author,
+       feed_source.url_hash AS feed_source_id, feed_source.title AS feed_source_title
+FROM feed_item
+INNER JOIN feed_source ON feed_item.feed_source_id = feed_source.url_hash
+WHERE feed_item.url_hash = :urlHash;
 
 countUnreadFeeds:
 SELECT COUNT(*) FROM feed_item
@@ -51,7 +72,7 @@ AND (:isHidden IS NULL OR COALESCE(feed_source_preferences.is_hidden, 0) = :isHi
 AND is_blocked = 0;
 
 selectFeeds:
-SELECT feed_item.url_hash, feed_item.url, feed_item.title, subtitle, image_url, pub_date, comments_url, is_read, is_bookmarked, notification_sent, feed_source.title AS feed_source_title, feed_source.url_hash AS feed_source_id, feed_source.url AS feed_source_url, feed_source.last_sync_timestamp AS feed_source_last_sync_timestamp, feed_source_category.id AS feed_source_category_id, feed_source_category.title AS feed_source_category_title, feed_source.logo_url AS feed_source_logo_url, feed_source_preferences.article_open_mode AS feed_source_article_open_mode, feed_source_preferences.is_hidden AS feed_source_is_hidden, feed_source_preferences.is_pinned AS feed_source_is_pinned, feed_source_preferences.notifications_enabled AS feed_source_notifications_enabled, feed_source_preferences.hide_images AS feed_source_hide_images, feed_source.fetch_failed AS feed_source_fetch_failed FROM feed_item
+SELECT feed_item.url_hash, feed_item.url, feed_item.title, subtitle, image_url, pub_date, first_seen_at, comments_url, author, content_fetched, is_read, is_bookmarked, notification_sent, feed_source.title AS feed_source_title, feed_source.url_hash AS feed_source_id, feed_source.url AS feed_source_url, feed_source.last_sync_timestamp AS feed_source_last_sync_timestamp, feed_source_category.id AS feed_source_category_id, feed_source_category.title AS feed_source_category_title, feed_source.logo_url AS feed_source_logo_url, feed_source_preferences.article_open_mode AS feed_source_article_open_mode, feed_source_preferences.is_hidden AS feed_source_is_hidden, feed_source_preferences.is_pinned AS feed_source_is_pinned, feed_source_preferences.notifications_enabled AS feed_source_notifications_enabled, feed_source_preferences.hide_images AS feed_source_hide_images, feed_source_preferences.flow_pace AS feed_source_flow_pace, feed_source_preferences.muted_until AS feed_source_muted_until, feed_source_preferences.voice_status AS feed_source_voice_status, feed_source_preferences.source_presentation AS feed_source_presentation, feed_source_preferences.rate_limit AS feed_source_rate_limit, feed_source.fetch_failed AS feed_source_fetch_failed FROM feed_item
 INNER JOIN feed_source
 ON feed_item.feed_source_id == feed_source.url_hash
 LEFT JOIN feed_source_category
@@ -66,6 +87,73 @@ AND (:feedSourceCategoryId IS NULL OR feed_source_category.id = :feedSourceCateg
 AND (:isUncategorized IS NULL OR (:isUncategorized = 1 AND feed_source.category_id IS NULL))
 AND (:isHidden IS NULL OR COALESCE(feed_source_preferences.is_hidden, 0) = :isHidden)
 AND is_blocked = 0
+AND (:pinnedFilter IS NULL OR COALESCE(feed_source_preferences.is_pinned, 0) = :pinnedFilter)
+AND (
+    :voicesOnly = 0
+    OR feed_source_preferences.voice_status = 'VOICE'
+    OR (
+        COALESCE(feed_source_preferences.voice_status, 'AUTOMATIC') = 'AUTOMATIC'
+        AND COALESCE(feed_source_preferences.flow_pace, 'STANDARD') IN ('SLOW', 'TIMELESS')
+    )
+)
+AND (
+    :isSavedView = 1
+    OR NOT EXISTS (
+        SELECT 1 FROM released_feed_items
+        WHERE released_feed_items.url_hash = feed_item.url_hash
+    )
+)
+AND (
+    :applyFlowRules = 0
+    OR feed_source_preferences.muted_until IS NULL
+    OR feed_source_preferences.muted_until <= :currentTime
+)
+AND (
+    :applyFlowRules = 0
+    OR is_bookmarked = 1
+    OR COALESCE(feed_source_preferences.is_pinned, 0) = 1
+    OR (
+        COALESCE(pub_date, first_seen_at) >= :currentTime - (
+            CASE COALESCE(feed_source_preferences.flow_pace, 'STANDARD')
+                WHEN 'FLASH' THEN 3
+                WHEN 'DAILY' THEN 12
+                WHEN 'SLOW' THEN 72
+                WHEN 'TIMELESS' THEN 168
+                ELSE 24
+            END * 60 * 60 * 1000
+        )
+    )
+)
+AND (
+    :applyFlowRules = 0
+    OR is_bookmarked = 1
+    OR COALESCE(feed_source_preferences.is_pinned, 0) = 1
+    OR COALESCE(feed_source_preferences.rate_limit, 'NONE') = 'NONE'
+    OR pub_date IS NULL
+    OR (
+        SELECT COUNT(*)
+        FROM feed_item AS newer_item
+        WHERE newer_item.feed_source_id = feed_item.feed_source_id
+        AND newer_item.pub_date IS NOT NULL
+        AND (
+            newer_item.pub_date > feed_item.pub_date
+            OR (
+                newer_item.pub_date = feed_item.pub_date
+                AND newer_item.url_hash > feed_item.url_hash
+            )
+        )
+        AND CASE COALESCE(feed_source_preferences.rate_limit, 'NONE')
+            WHEN 'ONE_PER_HOUR' THEN newer_item.pub_date / (60 * 60 * 1000)
+            ELSE newer_item.pub_date / (24 * 60 * 60 * 1000)
+        END = CASE COALESCE(feed_source_preferences.rate_limit, 'NONE')
+            WHEN 'ONE_PER_HOUR' THEN feed_item.pub_date / (60 * 60 * 1000)
+            ELSE feed_item.pub_date / (24 * 60 * 60 * 1000)
+        END
+    ) < CASE COALESCE(feed_source_preferences.rate_limit, 'NONE')
+        WHEN 'THREE_PER_DAY' THEN 3
+        ELSE 1
+    END
+)
 -- Keyset cursor on (pub_date, url_hash), never LIMIT/OFFSET: read state changes while the user
 -- scrolls, so a positional offset skips articles. The four branches exist because pub_date is
 -- nullable and comparing a null yields NULL, not false, so undated rows need matching explicitly.
@@ -156,8 +244,9 @@ INSERT OR REPLACE INTO feed_item(
     comments_url,
     notification_sent,
     is_blocked,
-    content_fetched
-) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+    content_fetched,
+    author
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateReadStatus:
 UPDATE feed_item
@@ -238,6 +327,10 @@ DELETE FROM feed_item;
 deleteAllWithFeedSource:
 DELETE FROM feed_item
 WHERE feed_source_id = :feedSourceId;
+
+deleteFeedItem:
+DELETE FROM feed_item
+WHERE url_hash = :urlHash;
 
 deleteAllExcept:
 DELETE FROM feed_item
@@ -474,6 +567,12 @@ updateContentFetchedStatus:
 UPDATE feed_item
 SET content_fetched = :contentFetched
 WHERE url_hash = :urlHash;
+
+selectPublicationDatesForPaceInference:
+SELECT feed_source_id, pub_date
+FROM feed_item
+WHERE pub_date IS NOT NULL
+ORDER BY feed_source_id ASC, pub_date ASC;
 
 selectFirstUnfetchedItemsBatch:
 SELECT feed_item.url_hash, feed_item.url

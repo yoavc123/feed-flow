@@ -13,5 +13,9 @@ sealed class SearchState {
         val searchQuery: String,
     ) : SearchState()
 
+    data class HistoryFound(
+        val items: ImmutableList<ReadingHistoryItem>,
+    ) : SearchState()
+
     data object EmptyState : SearchState()
 }

@@ -1,0 +1,45 @@
+ALTER TABLE feed_source_preferences ADD COLUMN flow_pace TEXT;
+ALTER TABLE feed_source_preferences ADD COLUMN muted_until INTEGER;
+ALTER TABLE feed_source_preferences ADD COLUMN voice_status TEXT NOT NULL DEFAULT 'AUTOMATIC';
+ALTER TABLE feed_source_preferences ADD COLUMN source_presentation TEXT NOT NULL DEFAULT 'STANDARD';
+ALTER TABLE feed_source_preferences ADD COLUMN rate_limit TEXT NOT NULL DEFAULT 'NONE';
+
+ALTER TABLE feed_item ADD COLUMN author TEXT;
+
+CREATE TABLE released_feed_items (
+    url_hash TEXT NOT NULL PRIMARY KEY,
+    released_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_released_feed_items_released_at ON released_feed_items(released_at);
+
+CREATE TABLE reading_progress (
+    feed_item_id TEXT NOT NULL PRIMARY KEY,
+    progress REAL NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE article_interaction (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    feed_item_id TEXT NOT NULL,
+    feed_source_id TEXT NOT NULL,
+    interaction_type TEXT NOT NULL,
+    occurred_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_article_interaction_source_time
+ON article_interaction(feed_source_id, occurred_at DESC);
+
+CREATE TABLE reading_history (
+    feed_item_id TEXT NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL,
+    title TEXT,
+    summary TEXT,
+    author TEXT,
+    feed_source_id TEXT NOT NULL,
+    feed_source_title TEXT NOT NULL,
+    article_text TEXT,
+    opened_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_reading_history_opened_at ON reading_history(opened_at DESC);

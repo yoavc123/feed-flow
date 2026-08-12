@@ -2,6 +2,7 @@ package com.prof18.feedflow.shared.ui.style
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
 import md_theme_dark_background
 import md_theme_dark_error
 import md_theme_dark_errorContainer
@@ -104,6 +105,98 @@ import md_theme_oled_surfaceTint
 import md_theme_oled_surfaceVariant
 import md_theme_oled_tertiary
 import md_theme_oled_tertiaryContainer
+
+val PaperColorScheme = lightColorScheme(
+    primary = Color(0xFF675D4C),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFF0E4D1),
+    onPrimaryContainer = Color(0xFF241A0C),
+    secondary = Color(0xFF71624B),
+    background = Color(0xFFFBF8F1),
+    surface = Color(0xFFFBF8F1),
+    surfaceContainer = Color(0xFFF3EEE3),
+    onSurface = Color(0xFF211F1A),
+    onSurfaceVariant = Color(0xFF514B42),
+    outline = Color(0xFF82786A),
+)
+
+val TideColorScheme = lightColorScheme(
+    primary = Color(0xFF006A6A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF9CF1F0),
+    onPrimaryContainer = Color(0xFF002020),
+    secondary = Color(0xFF4A6363),
+    background = Color(0xFFF4FAF9),
+    surface = Color(0xFFF4FAF9),
+    surfaceContainer = Color(0xFFE5F1F0),
+    onSurface = Color(0xFF161D1D),
+    onSurfaceVariant = Color(0xFF3F4948),
+)
+
+val TwilightColorScheme = darkColorScheme(
+    primary = Color(0xFFC9BFFF),
+    onPrimary = Color(0xFF312A63),
+    primaryContainer = Color(0xFF484079),
+    onPrimaryContainer = Color(0xFFE6DEFF),
+    secondary = Color(0xFFCBC2DC),
+    background = Color(0xFF171522),
+    surface = Color(0xFF171522),
+    surfaceContainer = Color(0xFF242230),
+    onSurface = Color(0xFFE8E0EE),
+    onSurfaceVariant = Color(0xFFCBC4D0),
+)
+
+val HearthColorScheme = lightColorScheme(
+    primary = Color(0xFF8C4A2F),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFDBCD),
+    onPrimaryContainer = Color(0xFF351000),
+    secondary = Color(0xFF77574B),
+    background = Color(0xFFFFF8F5),
+    surface = Color(0xFFFFF8F5),
+    surfaceContainer = Color(0xFFF9EDE7),
+    onSurface = Color(0xFF251A16),
+    onSurfaceVariant = Color(0xFF55433C),
+)
+
+val SlateColorScheme = darkColorScheme(
+    primary = Color(0xFFB8C8DA),
+    onPrimary = Color(0xFF223241),
+    primaryContainer = Color(0xFF394958),
+    onPrimaryContainer = Color(0xFFD4E4F6),
+    secondary = Color(0xFFBCC8D4),
+    background = Color(0xFF151A1F),
+    surface = Color(0xFF151A1F),
+    surfaceContainer = Color(0xFF22282E),
+    onSurface = Color(0xFFDFE3E8),
+    onSurfaceVariant = Color(0xFFC3C7CC),
+)
+
+val TerminalColorScheme = darkColorScheme(
+    primary = Color(0xFF73E28F),
+    onPrimary = Color(0xFF003915),
+    primaryContainer = Color(0xFF005322),
+    onPrimaryContainer = Color(0xFF91FFAA),
+    secondary = Color(0xFF9CD3A7),
+    background = Color(0xFF0C120E),
+    surface = Color(0xFF0C120E),
+    surfaceContainer = Color(0xFF18201A),
+    onSurface = Color(0xFFDCE5DC),
+    onSurfaceVariant = Color(0xFFBEC9BE),
+)
+
+val SolarizedColorScheme = lightColorScheme(
+    primary = Color(0xFF006D77),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF9DF0FA),
+    onPrimaryContainer = Color(0xFF002023),
+    secondary = Color(0xFF805500),
+    background = Color(0xFFFDF6E3),
+    surface = Color(0xFFFDF6E3),
+    surfaceContainer = Color(0xFFF0E9D5),
+    onSurface = Color(0xFF243033),
+    onSurfaceVariant = Color(0xFF4A5557),
+)
 
 val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,

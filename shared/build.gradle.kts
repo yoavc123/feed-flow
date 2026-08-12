@@ -1,4 +1,3 @@
-import co.touchlab.skie.configuration.SuspendInterop
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,7 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.ksp)
     alias(libs.plugins.feedflow.detekt)
-    alias(libs.plugins.skie)
 }
 
 kotlin {
@@ -25,29 +23,6 @@ kotlin {
         }
     }
 
-    jvm()
-
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64(),
-    ).forEach {
-        it.binaries.framework {
-            baseName = "FeedFlowKit"
-            isStatic = true
-            binaryOption("bundleId", "com.prof18.feedflow.FeedFlowKit")
-
-            export(project(":i18n"))
-            export(project(":core"))
-            export(project(":feedSync:dropbox"))
-            export(project(":feedSync:googledrive"))
-            export(libs.touchlab.kermit.simple)
-            export(libs.androidx.lifecycle.viewModel)
-        }
-        it.binaries.all {
-            linkerOpts("-lsqlite3")
-        }
-    }
-
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
@@ -63,19 +38,10 @@ kotlin {
             languageSettings.optIn("co.touchlab.kermit.ExperimentalKermitApi")
         }
 
-        matching { it.name.startsWith("ios") }.all {
-            languageSettings.optIn("com.russhwolf.settings.ExperimentalSettingsApi")
-            languageSettings.optIn("com.russhwolf.settings.ExperimentalSettingsImplementation")
-            languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")
-            languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
-            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
-        }
-
         commonMain {
             dependencies {
                 implementation(project(":database"))
                 implementation(project(":feedSync:database"))
-                implementation(project(":feedSync:icloud"))
                 implementation(project(":feedSync:greader"))
                 implementation(project(":feedSync:networkcore"))
                 implementation(project(":feedSync:feedbin"))
@@ -88,7 +54,6 @@ kotlin {
                 implementation(libs.multiplatform.settings)
                 implementation(libs.kotlinx.date.time)
                 implementation(libs.ktor.client.core)
-                implementation(libs.skie.annotation)
                 implementation(libs.stately.concurrency)
 
                 api(project(":core"))
@@ -116,32 +81,10 @@ kotlin {
             }
         }
 
-        val commonJvmAndroidMain by creating {
-            dependsOn(commonMain.get())
-
+        androidMain {
             dependencies {
                 implementation(libs.jsoup)
                 implementation(libs.ktor.client.okhttp)
-            }
-        }
-
-        val commonJvmAndroidTest by creating {
-            dependsOn(commonTest.get())
-
-            dependencies {
-                implementation(libs.kotlin.test.junit)
-            }
-        }
-
-        val commonMobileMain by creating {
-            dependsOn(commonMain.get())
-        }
-
-        androidMain {
-            dependsOn(commonJvmAndroidMain)
-            dependsOn(commonMobileMain)
-
-            dependencies {
                 implementation(libs.koin.android)
                 implementation(libs.workmanager)
                 implementation(libs.koin.workmanager)
@@ -149,9 +92,10 @@ kotlin {
         }
 
         getByName("androidHostTest") {
-            dependsOn(commonJvmAndroidTest)
+            dependsOn(commonTest.get())
 
             dependencies {
+                implementation(libs.kotlin.test.junit)
                 implementation(libs.junit)
                 implementation(libs.org.robolectric)
                 implementation(libs.androidx.test.core.ktx)
@@ -159,56 +103,14 @@ kotlin {
             }
         }
 
-        iosMain {
-            dependsOn(commonMobileMain)
-
-            dependencies {
-                api(libs.touchlab.kermit.simple)
-                implementation(libs.touchlab.kermit.crash)
-                implementation(libs.crashk.ios)
-                implementation(libs.ktor.client.darwin)
-            }
-        }
-
-        jvmMain {
-            dependsOn(commonJvmAndroidMain)
-
-            dependencies {
-                implementation(libs.kotlinx.coroutines.swing)
-                implementation(libs.htmlunit)
-                implementation(libs.kotlinx.serialization.json)
-                api(libs.sentry)
-            }
-        }
-
-        jvmTest {
-            dependsOn(commonJvmAndroidTest)
-            dependencies {
-                implementation(libs.sqldelight.sqlite.driver)
-            }
-        }
     }
 }
 
-// Configure TEST_RESOURCES_ROOT for JVM and iOS tests
+// Configure TEST_RESOURCES_ROOT for Android host tests.
 val testResourcesDir = project(":feedSync:test-utils")
     .file("src/commonMain/resources")
     .absolutePath
 
 tasks.withType<Test> {
     environment("TEST_RESOURCES_ROOT", testResourcesDir)
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
-    environment("TEST_RESOURCES_ROOT", testResourcesDir)
-    // iOS simulator requires SIMCTL_CHILD_ prefix for environment variables
-    environment("SIMCTL_CHILD_TEST_RESOURCES_ROOT", testResourcesDir)
-}
-
-skie {
-    features {
-        group {
-            SuspendInterop.Enabled(false)
-        }
-    }
 }

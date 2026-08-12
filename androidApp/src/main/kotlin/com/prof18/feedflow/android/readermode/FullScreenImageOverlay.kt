@@ -97,8 +97,8 @@ internal fun FullScreenImageOverlay(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(Spacing.medium)
-                .size(28.dp)
-                .background(Color.White, CircleShape)
+                .size(IMAGE_VIEWER_BUTTON_SIZE)
+                .background(Color.Black.copy(alpha = 0.65f), CircleShape)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
@@ -109,8 +109,8 @@ internal fun FullScreenImageOverlay(
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = LocalFeedFlowStrings.current.closeButtonContentDescription,
-                tint = Color.Black,
-                modifier = Modifier.size(18.dp),
+                tint = Color.White,
+                modifier = Modifier.size(IMAGE_VIEWER_ICON_SIZE),
             )
         }
 
@@ -121,8 +121,8 @@ internal fun FullScreenImageOverlay(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(Spacing.medium)
-                .size(28.dp)
-                .background(Color.White, CircleShape)
+                .size(IMAGE_VIEWER_BUTTON_SIZE)
+                .background(Color.Black.copy(alpha = 0.65f), CircleShape)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
@@ -137,8 +137,8 @@ internal fun FullScreenImageOverlay(
             Icon(
                 imageVector = Icons.Default.Share,
                 contentDescription = LocalFeedFlowStrings.current.menuShare,
-                tint = Color.Black,
-                modifier = Modifier.size(18.dp),
+                tint = Color.White,
+                modifier = Modifier.size(IMAGE_VIEWER_ICON_SIZE),
             )
         }
     }
@@ -194,3 +194,6 @@ private fun FullScreenImageOverlayPreview() {
         onDismiss = {},
     )
 }
+
+private val IMAGE_VIEWER_BUTTON_SIZE = 48.dp
+private val IMAGE_VIEWER_ICON_SIZE = 24.dp

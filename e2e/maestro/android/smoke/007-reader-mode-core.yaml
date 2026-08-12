@@ -16,6 +16,20 @@ appId: com.prof18.feedflow.debug
     id: reader_article_e2e_article_reader_success
 - assertVisible:
     id: reader_browser_button
+- swipe:
+    start: 50%, 78%
+    end: 50%, 28%
+    duration: 600
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: reader_browser_button
+- swipe:
+    start: 50%, 30%
+    end: 50%, 72%
+    duration: 600
+- waitForAnimationToEnd
+- assertVisible:
+    id: reader_browser_button
 - tapOn:
     id: reader_next_button
 - extendedWaitUntil:

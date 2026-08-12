@@ -7,18 +7,14 @@ import com.prof18.feedflow.feedsync.dropbox.DropboxSettings
 import com.prof18.feedflow.feedsync.feedbin.domain.FeedbinRepository
 import com.prof18.feedflow.feedsync.googledrive.GoogleDriveSettings
 import com.prof18.feedflow.feedsync.greader.domain.GReaderRepository
-import com.prof18.feedflow.feedsync.icloud.ICloudSettings
 import com.prof18.feedflow.feedsync.networkcore.NetworkSettings
-import com.prof18.feedflow.shared.domain.model.CurrentOS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 internal class AccountsRepository(
-    private val currentOS: CurrentOS,
     private val dropboxSettings: DropboxSettings,
     private val googleDriveSettings: GoogleDriveSettings,
-    private val icloudSettings: ICloudSettings,
     private val appConfig: AppConfig,
     private val gReaderRepository: GReaderRepository,
     private val networkSettings: NetworkSettings,
@@ -32,86 +28,7 @@ internal class AccountsRepository(
         restoreAccounts()
     }
 
-    fun getValidAccounts(): List<SyncAccounts> =
-        buildList {
-            when (currentOS) {
-                CurrentOS.Android -> {
-                    generateAndroidAccounts()
-                }
-                CurrentOS.Desktop.Linux -> {
-                    generateLinuxAccounts()
-                }
-                CurrentOS.Desktop.Mac -> {
-                    generateMacOSAccounts()
-                }
-                CurrentOS.Desktop.Windows -> {
-                    generateWindowsAccounts()
-                }
-                CurrentOS.Ios -> {
-                    generateIOSAccounts()
-                }
-            }
-        }
-
-    private fun MutableList<SyncAccounts>.generateWindowsAccounts() {
-        if (appConfig.isDropboxSyncEnabled) {
-            add(SyncAccounts.DROPBOX)
-        }
-        if (appConfig.isGoogleDriveSyncEnabled) {
-            add(SyncAccounts.GOOGLE_DRIVE)
-        }
-        add(SyncAccounts.FRESH_RSS)
-        add(SyncAccounts.MINIFLUX)
-        add(SyncAccounts.FEEDBIN)
-        add(SyncAccounts.BAZQUX)
-    }
-
-    private fun MutableList<SyncAccounts>.generateMacOSAccounts() {
-        if (appConfig.isIcloudSyncEnabled) {
-            add(SyncAccounts.ICLOUD)
-        }
-        if (appConfig.isDropboxSyncEnabled) {
-            add(SyncAccounts.DROPBOX)
-        }
-        if (appConfig.isGoogleDriveSyncEnabled) {
-            add(SyncAccounts.GOOGLE_DRIVE)
-        }
-        add(SyncAccounts.FRESH_RSS)
-        add(SyncAccounts.MINIFLUX)
-        add(SyncAccounts.FEEDBIN)
-        add(SyncAccounts.BAZQUX)
-    }
-
-    private fun MutableList<SyncAccounts>.generateLinuxAccounts() {
-        if (appConfig.isDropboxSyncEnabled) {
-            add(SyncAccounts.DROPBOX)
-        }
-        if (appConfig.isGoogleDriveSyncEnabled) {
-            add(SyncAccounts.GOOGLE_DRIVE)
-        }
-        add(SyncAccounts.FRESH_RSS)
-        add(SyncAccounts.MINIFLUX)
-        add(SyncAccounts.FEEDBIN)
-        add(SyncAccounts.BAZQUX)
-    }
-
-    private fun MutableList<SyncAccounts>.generateAndroidAccounts() {
-        if (appConfig.isDropboxSyncEnabled) {
-            add(SyncAccounts.DROPBOX)
-        }
-        if (appConfig.isGoogleDriveSyncEnabled) {
-            add(SyncAccounts.GOOGLE_DRIVE)
-        }
-        add(SyncAccounts.FRESH_RSS)
-        add(SyncAccounts.MINIFLUX)
-        add(SyncAccounts.FEEDBIN)
-        add(SyncAccounts.BAZQUX)
-    }
-
-    private fun MutableList<SyncAccounts>.generateIOSAccounts() {
-        if (appConfig.isIcloudSyncEnabled) {
-            add(SyncAccounts.ICLOUD)
-        }
+    fun getValidAccounts(): List<SyncAccounts> = buildList {
         if (appConfig.isDropboxSyncEnabled) {
             add(SyncAccounts.DROPBOX)
         }
@@ -132,11 +49,6 @@ internal class AccountsRepository(
     fun setGoogleDriveAccount() {
         clearOtherSyncCredentials(except = SyncAccounts.GOOGLE_DRIVE)
         currentAccountMutableState.value = SyncAccounts.GOOGLE_DRIVE
-    }
-
-    fun setICloudAccount() {
-        clearOtherSyncCredentials(except = SyncAccounts.ICLOUD)
-        currentAccountMutableState.value = SyncAccounts.ICLOUD
     }
 
     fun setFreshRssAccount() {
@@ -185,9 +97,6 @@ internal class AccountsRepository(
         if (except != SyncAccounts.GOOGLE_DRIVE) {
             googleDriveSettings.clearAll()
         }
-        if (except != SyncAccounts.ICLOUD) {
-            icloudSettings.setUseICloud(false)
-        }
         if (except != SyncAccounts.FRESH_RSS &&
             except != SyncAccounts.MINIFLUX &&
             except != SyncAccounts.BAZQUX &&
@@ -205,12 +114,6 @@ internal class AccountsRepository(
         if (googleDriveSettings.isGoogleDriveLinked()) {
             return SyncAccounts.GOOGLE_DRIVE
         }
-        if (currentOS == CurrentOS.Ios || currentOS == CurrentOS.Desktop.Mac) {
-            val useICloud = icloudSettings.getUseICloud()
-            if (useICloud) {
-                return SyncAccounts.ICLOUD
-            }
-        }
         if (gReaderRepository.isAccountSet()) {
             return networkSettings.getSyncAccountType() ?: SyncAccounts.LOCAL
         }
@@ -222,8 +125,7 @@ internal class AccountsRepository(
 
     fun isSyncEnabled(): Boolean {
         val currentSyncAccount = getCurrentSyncAccount()
-        return currentSyncAccount == SyncAccounts.ICLOUD ||
-            currentSyncAccount == SyncAccounts.DROPBOX ||
+        return currentSyncAccount == SyncAccounts.DROPBOX ||
             currentSyncAccount == SyncAccounts.GOOGLE_DRIVE
     }
 

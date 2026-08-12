@@ -3,11 +3,8 @@ package com.prof18.feedflow.shared.ui.home.components.list
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.BookmarkRemove
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
-import androidx.compose.material.icons.filled.MarkEmailRead
-import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -18,10 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.window.PopupProperties
 import com.prof18.feedflow.core.model.ArticleOpenMode
@@ -30,7 +23,6 @@ import com.prof18.feedflow.core.model.FeedItemId
 import com.prof18.feedflow.core.model.FeedItemUrlInfo
 import com.prof18.feedflow.core.model.FeedItemUrlTitle
 import com.prof18.feedflow.core.model.FeedSource
-import com.prof18.feedflow.shared.ui.components.ConfirmationDialog
 import com.prof18.feedflow.shared.ui.home.components.ShareCommentsIcon
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 
@@ -43,6 +35,7 @@ internal actual fun FeedItemContextMenu(
     shareCommentsMenuLabel: String,
     onBookmarkClick: (FeedItemId, Boolean) -> Unit,
     onReadStatusClick: (FeedItemId, Boolean) -> Unit,
+    onLetGo: ((FeedItemId) -> Unit)?,
     onCommentClick: (FeedItemUrlInfo) -> Unit,
     closeMenu: () -> Unit,
     onShareClick: (FeedItemUrlTitle) -> Unit,
@@ -51,9 +44,6 @@ internal actual fun FeedItemContextMenu(
     onMarkAllAboveAsRead: (String) -> Unit,
     onMarkAllBelowAsRead: (String) -> Unit,
 ) {
-    var showMarkAllAboveConfirmation by remember { mutableStateOf(false) }
-    var showMarkAllBelowConfirmation by remember { mutableStateOf(false) }
-
     DropdownMenu(
         expanded = showMenu,
         onDismissRequest = closeMenu,
@@ -84,20 +74,6 @@ internal actual fun FeedItemContextMenu(
                 },
             )
         }
-
-        HorizontalDivider()
-
-        MarkAllAboveAsReadMenuItem(
-            feedItem = feedItem,
-            onMarkAllAboveAsRead = { showMarkAllAboveConfirmation = true },
-            closeMenu = closeMenu,
-        )
-
-        MarkAllBelowAsReadMenuItem(
-            feedItem = feedItem,
-            onMarkAllBelowAsRead = { showMarkAllBelowConfirmation = true },
-            closeMenu = closeMenu,
-        )
 
         HorizontalDivider()
 
@@ -133,37 +109,13 @@ internal actual fun FeedItemContextMenu(
             closeMenu = closeMenu,
         )
 
-        ChangeReadStatusMenuItem(
-            feedItem = feedItem,
-            onReadStatusClick = onReadStatusClick,
-            closeMenu = closeMenu,
-        )
-    }
-
-    if (showMarkAllAboveConfirmation) {
-        ConfirmationDialog(
-            title = LocalFeedFlowStrings.current.markAllAboveAsReadConfirmationTitle,
-            message = LocalFeedFlowStrings.current.markAllAboveAsReadConfirmationMessage,
-            onConfirm = {
-                onMarkAllAboveAsRead(feedItem.id)
-            },
-            onDismiss = {
-                showMarkAllAboveConfirmation = false
-            },
-        )
-    }
-
-    if (showMarkAllBelowConfirmation) {
-        ConfirmationDialog(
-            title = LocalFeedFlowStrings.current.markAllBelowAsReadConfirmationTitle,
-            message = LocalFeedFlowStrings.current.markAllBelowAsReadConfirmationMessage,
-            onConfirm = {
-                onMarkAllBelowAsRead(feedItem.id)
-            },
-            onDismiss = {
-                showMarkAllBelowConfirmation = false
-            },
-        )
+        if (onLetGo != null) {
+            LetGoMenuItem(
+                feedItem = feedItem,
+                onLetGo = onLetGo,
+                closeMenu = closeMenu,
+            )
+        }
     }
 }
 
@@ -305,89 +257,20 @@ private fun ChangeBookmarkStatusMenuItem(
 }
 
 @Composable
-private fun ChangeReadStatusMenuItem(
+private fun LetGoMenuItem(
     feedItem: FeedItem,
-    onReadStatusClick: (FeedItemId, Boolean) -> Unit,
+    onLetGo: (FeedItemId) -> Unit,
     closeMenu: () -> Unit,
 ) {
     DropdownMenuItem(
         text = {
-            Text(
-                text = if (feedItem.isRead) {
-                    LocalFeedFlowStrings.current.menuMarkAsUnread
-                } else {
-                    LocalFeedFlowStrings.current.menuMarkAsRead
-                },
-            )
+            Text(LocalFeedFlowStrings.current.letGo)
         },
         leadingIcon = {
-            if (feedItem.isRead) {
-                Icon(
-                    imageVector = Icons.Default.MarkEmailUnread,
-                    contentDescription = null,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.MarkEmailRead,
-                    contentDescription = null,
-                )
-            }
+            Icon(imageVector = Icons.Default.Clear, contentDescription = null)
         },
         onClick = {
-            onReadStatusClick(
-                FeedItemId(feedItem.id),
-                !feedItem.isRead,
-            )
-            closeMenu()
-        },
-    )
-}
-
-@Composable
-private fun MarkAllAboveAsReadMenuItem(
-    feedItem: FeedItem,
-    onMarkAllAboveAsRead: (String) -> Unit,
-    closeMenu: () -> Unit,
-) {
-    DropdownMenuItem(
-        text = {
-            Text(
-                text = LocalFeedFlowStrings.current.menuMarkAllAboveAsRead,
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.KeyboardDoubleArrowUp,
-                contentDescription = null,
-            )
-        },
-        onClick = {
-            onMarkAllAboveAsRead(feedItem.id)
-            closeMenu()
-        },
-    )
-}
-
-@Composable
-private fun MarkAllBelowAsReadMenuItem(
-    feedItem: FeedItem,
-    onMarkAllBelowAsRead: (String) -> Unit,
-    closeMenu: () -> Unit,
-) {
-    DropdownMenuItem(
-        text = {
-            Text(
-                text = LocalFeedFlowStrings.current.menuMarkAllBelowAsRead,
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.KeyboardDoubleArrowDown,
-                contentDescription = null,
-            )
-        },
-        onClick = {
-            onMarkAllBelowAsRead(feedItem.id)
+            onLetGo(FeedItemId(feedItem.id))
             closeMenu()
         },
     )

@@ -11,8 +11,4 @@ class AccountsViewModel internal constructor(
     val accountsState = accountsRepository.currentAccountState
 
     fun getSupportedAccounts(): List<SyncAccounts> = accountsRepository.getValidAccounts()
-
-    fun setICloudAccount() {
-        accountsRepository.setICloudAccount()
-    }
 }

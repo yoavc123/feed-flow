@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.prof18.feedflow.android.settings.SettingsE2eIds
 import com.prof18.feedflow.core.model.ThemeMode
 import com.prof18.feedflow.shared.ui.settings.CompactSettingDropdownRow
+import com.prof18.feedflow.shared.ui.settings.ConfirmationSettingItem
 import com.prof18.feedflow.shared.ui.settings.SettingDropdownOption
 import com.prof18.feedflow.shared.ui.settings.SettingSwitchItem
 import com.prof18.feedflow.shared.ui.theme.FeedFlowTheme
@@ -30,10 +31,11 @@ internal fun AppearanceScreenContent(
     navigateBack: () -> Unit,
     themeMode: ThemeMode,
     isReduceMotionEnabled: Boolean,
-    isHideUnreadCountEnabled: Boolean,
+    areCalmInsightsEnabled: Boolean,
     onThemeModeSelected: (ThemeMode) -> Unit,
     onReduceMotionToggled: (Boolean) -> Unit,
-    onHideUnreadCountToggled: (Boolean) -> Unit,
+    onCalmInsightsToggled: (Boolean) -> Unit,
+    onClearReadingHistory: () -> Unit,
 ) {
     val strings = LocalFeedFlowStrings.current
     Scaffold(
@@ -67,10 +69,15 @@ internal fun AppearanceScreenContent(
                     title = strings.settingsTheme,
                     currentValue = themeMode,
                     options = persistentListOf(
-                        SettingDropdownOption(ThemeMode.SYSTEM, strings.settingsThemeSystem),
-                        SettingDropdownOption(ThemeMode.LIGHT, strings.settingsThemeLight),
-                        SettingDropdownOption(ThemeMode.DARK, strings.settingsThemeDark),
+                        SettingDropdownOption(ThemeMode.SYSTEM, strings.settingsThemeMaterialYou),
+                        SettingDropdownOption(ThemeMode.PAPER, strings.settingsThemePaper),
+                        SettingDropdownOption(ThemeMode.TIDE, strings.settingsThemeTide),
+                        SettingDropdownOption(ThemeMode.TWILIGHT, strings.settingsThemeTwilight),
+                        SettingDropdownOption(ThemeMode.HEARTH, strings.settingsThemeHearth),
                         SettingDropdownOption(ThemeMode.OLED, strings.settingsThemeOled),
+                        SettingDropdownOption(ThemeMode.SLATE, strings.settingsThemeSlate),
+                        SettingDropdownOption(ThemeMode.TERMINAL, strings.settingsThemeTerminal),
+                        SettingDropdownOption(ThemeMode.SOLARIZED, strings.settingsThemeSolarized),
                     ),
                     onOptionSelected = onThemeModeSelected,
                 )
@@ -78,10 +85,18 @@ internal fun AppearanceScreenContent(
 
             item {
                 SettingSwitchItem(
-                    modifier = Modifier.testTag(SettingsE2eIds.APPEARANCE_HIDE_UNREAD_COUNT),
-                    title = strings.settingsHideUnreadCount,
-                    isChecked = isHideUnreadCountEnabled,
-                    onCheckedChange = onHideUnreadCountToggled,
+                    title = strings.settingsCalmInsights,
+                    isChecked = areCalmInsightsEnabled,
+                    onCheckedChange = onCalmInsightsToggled,
+                )
+            }
+
+            item {
+                ConfirmationSettingItem(
+                    title = strings.settingsClearReadingHistory,
+                    dialogTitle = strings.settingsClearReadingHistory,
+                    dialogMessage = strings.settingsClearReadingHistoryConfirmation,
+                    onConfirm = onClearReadingHistory,
                 )
             }
 
@@ -109,10 +124,11 @@ private fun AppearanceScreenContentPreview() {
             navigateBack = {},
             themeMode = ThemeMode.SYSTEM,
             isReduceMotionEnabled = false,
-            isHideUnreadCountEnabled = false,
+            areCalmInsightsEnabled = true,
             onThemeModeSelected = {},
             onReduceMotionToggled = {},
-            onHideUnreadCountToggled = {},
+            onCalmInsightsToggled = {},
+            onClearReadingHistory = {},
         )
     }
 }

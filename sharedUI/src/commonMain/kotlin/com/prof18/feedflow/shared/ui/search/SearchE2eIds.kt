@@ -13,5 +13,6 @@ object SearchE2eIds {
             SearchFilter.All -> "search_filter_all"
             SearchFilter.Read -> "search_filter_read"
             SearchFilter.Bookmarks -> "search_filter_bookmarks"
+            SearchFilter.History -> "search_filter_history"
         }
 }

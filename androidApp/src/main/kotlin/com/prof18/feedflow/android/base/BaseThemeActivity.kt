@@ -48,7 +48,7 @@ abstract class BaseThemeActivity : ComponentActivity() {
         var darkTheme by mutableStateOf(
             resources.configuration.isSystemInDarkTheme,
         )
-        var useOledTheme by mutableStateOf(false)
+        var activeThemeMode by mutableStateOf(settingsRepository.getThemeMode())
 
         // Update the theme and system bars dynamically
         lifecycleScope.launch {
@@ -61,17 +61,26 @@ abstract class BaseThemeActivity : ComponentActivity() {
                         ThemeMode.LIGHT -> false
                         ThemeMode.DARK -> true
                         ThemeMode.OLED -> true
+                        ThemeMode.TWILIGHT,
+                        ThemeMode.SLATE,
+                        ThemeMode.TERMINAL,
+                        -> true
+                        ThemeMode.PAPER,
+                        ThemeMode.TIDE,
+                        ThemeMode.HEARTH,
+                        ThemeMode.SOLARIZED,
+                        -> false
                         ThemeMode.SYSTEM -> systemDark
                     }
-                    isDarkTheme to (themeState == ThemeMode.OLED)
+                    isDarkTheme to themeState
                 }
-                    .onEach { (isDarkTheme, isOledTheme) ->
+                    .onEach { (isDarkTheme, themeMode) ->
                         darkTheme = isDarkTheme
-                        useOledTheme = isOledTheme
+                        activeThemeMode = themeMode
                     }
                     .distinctUntilChanged()
-                    .collect { (isDark, isOled) ->
-                        val navigationDarkScrim = if (isOled) {
+                    .collect { (isDark, themeMode) ->
+                        val navigationDarkScrim = if (themeMode == ThemeMode.OLED) {
                             android.graphics.Color.BLACK
                         } else {
                             darkScrim
@@ -98,7 +107,7 @@ abstract class BaseThemeActivity : ComponentActivity() {
 
             FeedFlowTheme(
                 darkTheme = darkTheme,
-                useOledTheme = useOledTheme,
+                themeMode = activeThemeMode,
             ) {
                 val lyricist = rememberFeedFlowStrings()
                 ProvideFeedFlowStrings(lyricist) {

@@ -40,7 +40,10 @@ fun ConfirmationSettingItem(
         ConfirmationDialog(
             title = dialogTitle,
             message = dialogMessage,
-            onConfirm = onConfirm,
+            onConfirm = {
+                onConfirm()
+                showDialog = false
+            },
             onDismiss = { showDialog = false },
             confirmButtonText = confirmButtonText,
             dismissButtonText = dismissButtonText,

@@ -2,6 +2,9 @@ package com.prof18.feedflow.shared.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prof18.feedflow.core.model.ArticleInteraction
+import com.prof18.feedflow.core.model.ArticleInteractionType
+import com.prof18.feedflow.core.model.CalmCoachingCard
 import com.prof18.feedflow.core.model.CategoryId
 import com.prof18.feedflow.core.model.CategoryName
 import com.prof18.feedflow.core.model.CategoryNameValidationResult
@@ -26,8 +29,10 @@ import com.prof18.feedflow.core.model.VisibleFeedItem
 import com.prof18.feedflow.core.model.canonical
 import com.prof18.feedflow.core.model.canonicalCategoryName
 import com.prof18.feedflow.core.model.trimmed
+import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.shared.data.FeedAppearanceSettingsRepository
 import com.prof18.feedflow.shared.data.SettingsRepository
+import com.prof18.feedflow.shared.domain.coaching.CalmCoachingEngine
 import com.prof18.feedflow.shared.domain.feed.FeedActionsRepository
 import com.prof18.feedflow.shared.domain.feed.FeedFetcherRepository
 import com.prof18.feedflow.shared.domain.feed.FeedFontSizeRepository
@@ -46,7 +51,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -57,13 +61,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 
 class HomeViewModel internal constructor(
@@ -75,6 +80,7 @@ class HomeViewModel internal constructor(
     private val feedFontSizeRepository: FeedFontSizeRepository,
     private val feedCategoryRepository: FeedCategoryRepository,
     private val feedStateRepository: FeedStateRepository,
+    private val databaseHelper: DatabaseHelper,
     private val feedFetcherRepository: FeedFetcherRepository,
     private val getNextFeedFilterOrNullUseCase: GetNextFeedFilterOrNullUseCase,
 ) : ViewModel() {
@@ -84,14 +90,9 @@ class HomeViewModel internal constructor(
 
     // Feeds
     val feedState: StateFlow<ImmutableList<FeedItem>> = feedStateRepository.feedState
+    val pinnedFeedState: StateFlow<ImmutableList<FeedItem>> = feedStateRepository.pinnedFeedState
+    val showFlowOnboarding: StateFlow<Boolean> = settingsRepository.showFlowOnboardingFlow
     val pendingNewArticlesState: StateFlow<Int> = feedStateRepository.pendingNewArticlesState
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val unreadCountFlow: Flow<Long> = feedAppearanceSettingsRepository.hideUnreadCount.flatMapLatest { hide ->
-        if (hide) flowOf(0L) else feedStateRepository.getUnreadFeedCountFlow()
-    }
-
-    val isUnreadCountHidden: StateFlow<Boolean> = feedAppearanceSettingsRepository.hideUnreadCount
 
     // Error
     private val mutableUIErrorState: MutableSharedFlow<UIErrorState> = MutableSharedFlow()
@@ -105,6 +106,13 @@ class HomeViewModel internal constructor(
     val feedOperationState: StateFlow<FeedOperation> = feedOperationMutableState.asStateFlow()
     private val refreshTriggerMutableState = MutableStateFlow(0)
     val refreshTriggerState: StateFlow<Int> = refreshTriggerMutableState.asStateFlow()
+    private val letGoEventMutableFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val letGoEvents: SharedFlow<String> = letGoEventMutableFlow.asSharedFlow()
+    private val letGoItems = mutableMapOf<String, FeedItem>()
+    private val letGoJobs = mutableMapOf<String, Job>()
+    private val coachingEngine = CalmCoachingEngine()
+    private val coachingCardsMutableState = MutableStateFlow<ImmutableList<CalmCoachingCard>>(persistentListOf())
+    val coachingCards: StateFlow<ImmutableList<CalmCoachingCard>> = coachingCardsMutableState.asStateFlow()
 
     private val nextFeedPreviewMutableState: MutableStateFlow<NextFeedPreviewState> = MutableStateFlow(
         NextFeedPreviewState.NextFeedPreviewDisabledState,
@@ -119,6 +127,8 @@ class HomeViewModel internal constructor(
     val currentFeedFilter = feedStateRepository.currentFeedFilter
     val isSyncUploadRequired: StateFlow<Boolean> = settingsRepository.isSyncUploadRequired
     val swipeActions: StateFlow<SwipeActions> = feedAppearanceSettingsRepository.swipeActions
+
+    fun dismissFlowOnboarding() = settingsRepository.dismissFlowOnboarding()
     val feedLayout: StateFlow<FeedLayout> = feedAppearanceSettingsRepository.feedLayout
     val isGridLayoutEnabled: StateFlow<Boolean> = feedAppearanceSettingsRepository.gridLayoutEnabled
     val feedItemDisplaySettings: StateFlow<FeedItemDisplaySettings> = combine(
@@ -151,8 +161,19 @@ class HomeViewModel internal constructor(
     init {
         observeErrorState()
         viewModelScope.launch {
-            feedStateRepository.updateFeedFilter(FeedFilter.Timeline)
+            feedStateRepository.updateFeedFilter(FeedFilter.Flow)
             initDrawerData()
+        }
+        viewModelScope.launch {
+            combine(feedState, pinnedFeedState, settingsRepository.calmInsightsEnabledFlow) { items, pinned, enabled ->
+                Triple(items, pinned, enabled)
+            }.collectLatest { (items, pinned, enabled) ->
+                if (enabled) {
+                    refreshCoachingCards(items + pinned)
+                } else {
+                    coachingCardsMutableState.value = persistentListOf()
+                }
+            }
         }
     }
 
@@ -162,6 +183,7 @@ class HomeViewModel internal constructor(
         }
         hasTriggeredAppLaunch = true
         viewModelScope.launch {
+            databaseHelper.inferMissingFlowPaces()
             feedStateRepository.getFeeds()
         }
         getNewFeeds(isFirstLaunch = true)
@@ -371,6 +393,39 @@ class HomeViewModel internal constructor(
         }
     }
 
+    fun letGo(feedItemId: FeedItemId) {
+        val feedItem = (feedState.value + pinnedFeedState.value).firstOrNull { it.id == feedItemId.id } ?: return
+        if (letGoJobs.containsKey(feedItem.id)) {
+            return
+        }
+        letGoItems[feedItem.id] = feedItem
+        feedActionsRepository.prepareLetGo(feedItemId)
+        letGoJobs[feedItem.id] = viewModelScope.launch {
+            letGoEventMutableFlow.emit(feedItem.id)
+            delay(6.seconds)
+            feedActionsRepository.commitLetGo(feedItemId)
+            databaseHelper.recordArticleInteraction(
+                ArticleInteraction(
+                    feedItemId = feedItem.id,
+                    feedSourceId = feedItem.feedSource.id,
+                    type = ArticleInteractionType.RELEASED,
+                    occurredAtMillis = Clock.System.now().toEpochMilliseconds(),
+                ),
+            )
+            refreshCoachingCards(feedState.value + pinnedFeedState.value)
+            letGoItems.remove(feedItem.id)
+            letGoJobs.remove(feedItem.id)
+        }
+    }
+
+    fun undoLetGo(feedItemId: String) {
+        letGoItems.remove(feedItemId) ?: return
+        letGoJobs.remove(feedItemId)?.cancel()
+        viewModelScope.launch {
+            feedActionsRepository.undoPendingLetGo()
+        }
+    }
+
     fun markAllAboveAsRead(feedItemId: String) {
         launchAfterFlushingScrollReadState {
             feedActionsRepository.markAllAboveAsRead(feedItemId)
@@ -472,9 +527,29 @@ class HomeViewModel internal constructor(
     }
 
     fun updateBookmarkStatus(feedItemId: FeedItemId, bookmarked: Boolean) {
+        val feedItem = (feedState.value + pinnedFeedState.value).firstOrNull { it.id == feedItemId.id }
         launchAfterFlushingScrollReadState {
             feedActionsRepository.updateBookmarkStatus(feedItemId, bookmarked)
+            if (bookmarked && feedItem != null) {
+                databaseHelper.recordArticleInteraction(
+                    ArticleInteraction(
+                        feedItemId = feedItem.id,
+                        feedSourceId = feedItem.feedSource.id,
+                        type = ArticleInteractionType.SAVED,
+                        occurredAtMillis = Clock.System.now().toEpochMilliseconds(),
+                    ),
+                )
+            }
         }
+    }
+
+    private suspend fun refreshCoachingCards(items: List<FeedItem>) {
+        val now = Clock.System.now()
+        val interactions = databaseHelper.getArticleInteractionsSince((now - 14.days).toEpochMilliseconds())
+        val sources = databaseHelper.getFeedSources()
+        coachingCardsMutableState.value = coachingEngine
+            .createCards(items, sources, interactions)
+            .toImmutableList()
     }
 
     fun toggleFeedPin(feedSource: FeedSource) {

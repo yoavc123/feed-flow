@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `kotlin-dsl`
-    alias(libs.plugins.flatpak.gradle.generator)
 }
 
 java {
@@ -40,8 +39,3 @@ gradlePlugin {
     }
 }
 
-tasks.flatpakGradleGenerator {
-    outputFile = file("../../desktopApp/packaging/flatpak/flatpak-sources-convention.json")
-    downloadDirectory.set("./offline-repository")
-    excludeConfigurations.set(listOf("testCompileClasspath", "testRuntimeClasspath"))
-}

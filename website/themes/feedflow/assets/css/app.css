@@ -1771,7 +1771,7 @@ hr {
   margin-inline: auto;
 }
 
-/* Horizontal scroll strip — like App Store previews */
+/* Horizontal scroll strip for Android previews */
 .gallery-scroll-wrap {
   overflow-x: auto;
   overflow-y: hidden;

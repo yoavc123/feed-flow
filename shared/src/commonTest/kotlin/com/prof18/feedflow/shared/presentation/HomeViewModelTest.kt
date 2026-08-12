@@ -1333,7 +1333,7 @@ class HomeViewModelTest : KoinTestBase() {
         advanceUntilIdle()
 
         val filter = viewModel.currentFeedFilter.value
-        assertIs<FeedFilter.Category>(filter)
+        assertIs<FeedFilter.Stream>(filter)
         assertEquals(category.id, filter.feedCategory.id)
     }
 
@@ -1797,7 +1797,7 @@ class HomeViewModelTest : KoinTestBase() {
 
         val state = viewModel.viewMenuState.value
         assertEquals(FeedOrder.NEWEST_FIRST, state.feedOrder)
-        assertEquals(false, state.showReadArticlesTimeline)
+        assertEquals(true, state.showReadArticlesTimeline)
     }
 
     @Test
@@ -1820,12 +1820,66 @@ class HomeViewModelTest : KoinTestBase() {
         advanceUntilIdle()
 
         viewModel.viewMenuState.test {
-            assertEquals(false, awaitItem().showReadArticlesTimeline)
-
-            viewModel.updateShowReadArticlesTimeline(true)
-            advanceUntilIdle()
             assertEquals(true, awaitItem().showReadArticlesTimeline)
+
+            viewModel.updateShowReadArticlesTimeline(false)
+            advanceUntilIdle()
+            assertEquals(false, awaitItem().showReadArticlesTimeline)
         }
+    }
+
+    @Test
+    fun `Flow migration onboarding is shown once and can be dismissed`() = runTest(testDispatcher) {
+        val viewModel = getViewModel()
+
+        assertEquals(true, viewModel.showFlowOnboarding.value)
+        viewModel.dismissFlowOnboarding()
+
+        assertEquals(false, viewModel.showFlowOnboarding.value)
+    }
+
+    @Test
+    fun `let go waits six seconds before persisting release`() = runTest(testDispatcher) {
+        val source = createFeedSource(id = "release-source", title = "Release source")
+        insertFeedSources(source)
+        databaseHelper.insertFeedItems(
+            listOf(buildFeedItem("release-item", "Release item", 10_000L, source).copy(content = "content")),
+            lastSyncTimestamp = 0,
+        )
+        val viewModel = getViewModel()
+        advanceUntilIdle()
+
+        viewModel.letGo(FeedItemId("release-item"))
+        runCurrent()
+
+        assertEquals(emptyList(), viewModel.feedState.value.map { it.id })
+        assertEquals("content", databaseHelper.getFeedItemContent("release-item"))
+
+        advanceTimeBy(6.seconds)
+        runCurrent()
+
+        assertEquals(null, databaseHelper.getFeedItemContent("release-item"))
+    }
+
+    @Test
+    fun `undo before six seconds prevents release tombstone`() = runTest(testDispatcher) {
+        val source = createFeedSource(id = "undo-source", title = "Undo source")
+        insertFeedSources(source)
+        databaseHelper.insertFeedItems(
+            listOf(buildFeedItem("undo-item", "Undo item", 10_000L, source).copy(content = "content")),
+            lastSyncTimestamp = 0,
+        )
+        val viewModel = getViewModel()
+        advanceUntilIdle()
+
+        viewModel.letGo(FeedItemId("undo-item"))
+        runCurrent()
+        advanceTimeBy(5.seconds)
+        viewModel.undoLetGo("undo-item")
+        advanceUntilIdle()
+
+        assertEquals("content", databaseHelper.getFeedItemContent("undo-item"))
+        assertEquals(listOf("undo-item"), viewModel.feedState.value.map { it.id })
     }
 
     private fun getViewModel(): HomeViewModel = get()
@@ -1893,6 +1947,7 @@ class HomeViewModelTest : KoinTestBase() {
         pageSize = 100,
         showReadItems = true,
         sortOrder = com.prof18.feedflow.core.model.FeedOrder.NEWEST_FIRST,
+        currentTimeMillis = 100_000L,
     )
 
     private class FakeRssParserWrapper : RssParserWrapper {

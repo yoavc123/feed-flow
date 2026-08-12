@@ -2,6 +2,7 @@ package com.prof18.feedflow.shared.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.shared.data.SettingsRepository
 import com.prof18.feedflow.shared.presentation.model.ExtrasSettingsState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class ExtrasSettingsViewModel internal constructor(
     private val settingsRepository: SettingsRepository,
+    private val databaseHelper: DatabaseHelper,
 ) : ViewModel() {
 
     private val stateMutableFlow = MutableStateFlow(ExtrasSettingsState())
@@ -23,10 +25,12 @@ class ExtrasSettingsViewModel internal constructor(
 
     private fun loadSettings() {
         val isReduceMotionEnabled = settingsRepository.getReduceMotionEnabled()
+        val areCalmInsightsEnabled = settingsRepository.getCalmInsightsEnabled()
 
         stateMutableFlow.update {
             ExtrasSettingsState(
                 isReduceMotionEnabled = isReduceMotionEnabled,
+                areCalmInsightsEnabled = areCalmInsightsEnabled,
             )
         }
     }
@@ -38,5 +42,14 @@ class ExtrasSettingsViewModel internal constructor(
                 it.copy(isReduceMotionEnabled = value)
             }
         }
+    }
+
+    fun updateCalmInsightsEnabled(value: Boolean) {
+        settingsRepository.setCalmInsightsEnabled(value)
+        stateMutableFlow.update { it.copy(areCalmInsightsEnabled = value) }
+    }
+
+    fun clearLocalReadingHistory() {
+        viewModelScope.launch { databaseHelper.clearLocalReadingHistory() }
     }
 }

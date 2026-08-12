@@ -47,7 +47,6 @@ import com.prof18.feedflow.core.model.CategoryNameValidationResult
 import com.prof18.feedflow.core.model.DrawerItem
 import com.prof18.feedflow.core.model.FeedFilter
 import com.prof18.feedflow.core.model.FeedSource
-import com.prof18.feedflow.core.model.FeedSourceCategory
 import com.prof18.feedflow.core.model.NavDrawerState
 import com.prof18.feedflow.shared.ui.components.DeleteAllFeedsInCategoryDialog
 import com.prof18.feedflow.shared.ui.components.DeleteCategoryDialog
@@ -74,8 +73,6 @@ internal fun AndroidDrawerFeedSourcesByCategories(
     validateCategoryName: (CategoryId?, CategoryName) -> CategoryNameValidationResult,
     onChangeFeedCategoryClick: (FeedSource) -> Unit,
     onDeleteCategoryClick: (CategoryId) -> Unit,
-    onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit,
-    onMarkAllReadForCategoryClick: (FeedSourceCategory) -> Unit,
     onDeleteAllFeedsInCategoryByIdClick: (CategoryId) -> Unit,
 ) {
     Column {
@@ -104,7 +101,6 @@ internal fun AndroidDrawerFeedSourcesByCategories(
                 onPinFeedClick = onPinFeedClick,
                 onChangeFeedCategoryClick = onChangeFeedCategoryClick,
                 onOpenWebsite = onOpenWebsite,
-                onMarkAllReadForFeedSourceClick = onMarkAllReadForFeedSourceClick,
             )
 
             for ((categoryWrapper, drawerFeedSources) in navDrawerState.feedSourcesByCategory) {
@@ -132,8 +128,6 @@ internal fun AndroidDrawerFeedSourcesByCategories(
                         onEditCategoryClick = onEditCategoryClick,
                         validateCategoryName = validateCategoryName,
                         onDeleteCategoryClick = onDeleteCategoryClick,
-                        onMarkAllReadForFeedSourceClick = onMarkAllReadForFeedSourceClick,
-                        onMarkAllReadForCategoryClick = onMarkAllReadForCategoryClick,
                         onDeleteAllFeedsInCategoryByIdClick = onDeleteAllFeedsInCategoryByIdClick,
                     )
                 }
@@ -160,8 +154,6 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
     onEditCategoryClick: (CategoryId, CategoryName) -> Unit,
     validateCategoryName: (CategoryId?, CategoryName) -> CategoryNameValidationResult,
     onDeleteCategoryClick: (CategoryId) -> Unit,
-    onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit,
-    onMarkAllReadForCategoryClick: (FeedSourceCategory) -> Unit,
     onDeleteAllFeedsInCategoryByIdClick: (CategoryId) -> Unit,
     modifier: Modifier = Modifier,
     dragHandle: (@Composable () -> Unit)? = null,
@@ -173,10 +165,6 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
     var showDeleteAllFeedsDialog by remember { mutableStateOf(false) }
 
     val category = feedSourceCategoryWrapper.feedSourceCategory
-    val unreadCount: Long = remember(drawerFeedSources) {
-        drawerFeedSources.sumOf { it.unreadCount }
-    }
-
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -194,17 +182,17 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
         ) {
             val headerText = category?.title ?: LocalFeedFlowStrings.current.noCategory
             val isSelected = if (category != null) {
-                currentFeedFilter is FeedFilter.Category && currentFeedFilter.feedCategory == category
+                currentFeedFilter is FeedFilter.Stream && currentFeedFilter.feedCategory == category
             } else {
-                currentFeedFilter is FeedFilter.Uncategorized
+                currentFeedFilter is FeedFilter.UncategorizedStream
             }
             val navItemColors = drawerItemColors(drawerItemVisualStyle)
             val itemShape = drawerItemVisualStyle.itemShape
             val onClick = {
                 if (category != null) {
-                    onFeedFilterSelected(FeedFilter.Category(feedCategory = category))
+                    onFeedFilterSelected(FeedFilter.Stream(feedCategory = category))
                 } else {
-                    onFeedFilterSelected(FeedFilter.Uncategorized)
+                    onFeedFilterSelected(FeedFilter.UncategorizedStream)
                 }
             }
 
@@ -238,15 +226,6 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
                             text = headerText,
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.weight(1f),
-                        )
-                    }
-
-                    if (unreadCount > 0 && dragHandle == null) {
-                        Text(
-                            modifier = Modifier.padding(start = Spacing.small),
-                            text = unreadCount.toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = navItemColors.textColor(isSelected).value,
                         )
                     }
                 }
@@ -286,7 +265,6 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
                 onPinFeedClick = onPinFeedClick,
                 onChangeFeedCategoryClick = onChangeFeedCategoryClick,
                 onOpenWebsite = onOpenWebsite,
-                onMarkAllReadForFeedSourceClick = onMarkAllReadForFeedSourceClick,
             )
         }
 
@@ -310,16 +288,6 @@ internal fun AndroidDrawerFeedSourceByCategoryItem(
                         showEditDialog = true
                     },
                 )
-
-                if (unreadCount > 0) {
-                    DropdownMenuItem(
-                        text = { Text(strings.markAllReadButton) },
-                        onClick = {
-                            showMenu = false
-                            onMarkAllReadForCategoryClick(category)
-                        },
-                    )
-                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = Spacing.xsmall),

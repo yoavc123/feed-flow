@@ -35,7 +35,6 @@ internal fun AndroidDrawerFeedSourcesList(
     onPinFeedClick: (FeedSource) -> Unit,
     onChangeFeedCategoryClick: (FeedSource) -> Unit,
     onOpenWebsite: (String) -> Unit,
-    onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit,
     dragHandleForFeedSource: (@Composable (FeedSource) -> Unit)? = null,
 ) {
     Column {
@@ -72,9 +71,7 @@ internal fun AndroidDrawerFeedSourcesList(
                 onPinFeedClick = onPinFeedClick,
                 onChangeFeedCategoryClick = onChangeFeedCategoryClick,
                 onOpenWebsite = onOpenWebsite,
-                onMarkAllReadForFeedSourceClick = onMarkAllReadForFeedSourceClick,
                 feedSource = feedSourceWrapper.feedSource,
-                unreadCount = feedSourceWrapper.unreadCount,
                 dragHandle = dragHandleForFeedSource?.let { dragHandle ->
                     {
                         dragHandle(feedSourceWrapper.feedSource)
@@ -97,7 +94,6 @@ internal fun ColumnScope.FeedSourcesListWithCategorySelector(
     onPinFeedClick: (FeedSource) -> Unit,
     onChangeFeedCategoryClick: (FeedSource) -> Unit,
     onOpenWebsite: (String) -> Unit,
-    onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit,
     dragHandleForFeedSource: (@Composable (FeedSource) -> Unit)? = null,
 ) {
     ConditionalAnimatedVisibility(
@@ -120,7 +116,6 @@ internal fun ColumnScope.FeedSourcesListWithCategorySelector(
             onPinFeedClick = onPinFeedClick,
             onChangeFeedCategoryClick = onChangeFeedCategoryClick,
             onOpenWebsite = onOpenWebsite,
-            onMarkAllReadForFeedSourceClick = onMarkAllReadForFeedSourceClick,
             dragHandleForFeedSource = dragHandleForFeedSource,
         )
     }

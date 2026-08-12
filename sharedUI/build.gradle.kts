@@ -37,8 +37,6 @@ kotlin {
         optIn.add("kotlinx.coroutines.FlowPreview")
     }
 
-    jvm()
-
     sourceSets {
         androidMain {
             dependencies {
@@ -70,11 +68,5 @@ kotlin {
             }
         }
 
-        jvmMain {
-            dependencies {
-                implementation(libs.jsystem.theme.detector)
-                api(libs.io.coil.network)
-            }
-        }
     }
 }

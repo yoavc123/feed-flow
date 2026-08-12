@@ -1,0 +1,22 @@
+CREATE TABLE released_feed_items (
+    url_hash TEXT NOT NULL PRIMARY KEY,
+    released_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_released_feed_items_released_at ON released_feed_items(released_at);
+
+releaseFeedItem:
+INSERT OR REPLACE INTO released_feed_items(url_hash, released_at)
+VALUES (?, ?);
+
+isFeedItemReleased:
+SELECT EXISTS(SELECT 1 FROM released_feed_items WHERE url_hash = ?);
+
+restoreReleasedFeedItem:
+DELETE FROM released_feed_items WHERE url_hash = ?;
+
+pruneReleasedFeedItems:
+DELETE FROM released_feed_items WHERE released_at < :threshold;
+
+deleteAllReleasedFeedItems:
+DELETE FROM released_feed_items;

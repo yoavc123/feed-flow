@@ -15,15 +15,16 @@ appId: com.prof18.feedflow.debug
     id: appearance_theme
 - tapOn:
     id: appearance_theme
-- tapOn: "Black"
-- assertVisible:
-    id: appearance_hide_unread_count
-- tapOn:
-    id: appearance_hide_unread_count
+- tapOn: "Paper"
 - assertVisible:
     id: appearance_reduce_motion
 - tapOn:
     id: appearance_reduce_motion
+- assertVisible: "Calm suggestions"
+- tapOn: "Calm suggestions"
+- tapOn: "Clear reading history"
+- assertVisible: "Delete local reading history and progress?"
+- tapOn: "Cancel"
 - tapOn:
     id: settings_back_button
 - tapOn:
@@ -33,8 +34,6 @@ appId: com.prof18.feedflow.debug
 - tapOn:
     id: settings_appearance
 - assertVisible:
-    text: "Black"
-- assertVisible:
-    id: appearance_hide_unread_count
+    text: "Paper"
 - assertVisible:
     id: appearance_reduce_motion

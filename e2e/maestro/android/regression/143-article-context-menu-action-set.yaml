@@ -14,10 +14,9 @@ appId: com.prof18.feedflow.debug
     id: article_row_e2e_article_comments
 - assertVisible: "Open feed settings"
 - assertVisible: "Open feed website"
-- assertVisible: "Mark all above as read"
-- assertVisible: "Mark all below as read"
 - assertVisible: "Share comments"
 - assertVisible: "Open comments"
 - assertVisible: "Share"
 - assertVisible: "Add to bookmarks"
-- assertVisible: "Mark as read"
+- assertVisible: "Let Go"
+- assertNotVisible: "Mark as read"

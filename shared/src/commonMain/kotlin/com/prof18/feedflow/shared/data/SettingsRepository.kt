@@ -40,6 +40,14 @@ class SettingsRepository(
     private val reduceMotionEnabledMutableFlow = MutableStateFlow(getReduceMotionEnabled())
     val reduceMotionEnabledFlow: StateFlow<Boolean> = reduceMotionEnabledMutableFlow.asStateFlow()
 
+    private val calmInsightsEnabledMutableFlow = MutableStateFlow(getCalmInsightsEnabled())
+    val calmInsightsEnabledFlow: StateFlow<Boolean> = calmInsightsEnabledMutableFlow.asStateFlow()
+
+    private val showFlowOnboardingMutableFlow = MutableStateFlow(
+        !settings.getBoolean(SettingsFields.FLOW_ONBOARDING_SEEN.name, false),
+    )
+    val showFlowOnboardingFlow: StateFlow<Boolean> = showFlowOnboardingMutableFlow.asStateFlow()
+
     private val showReadArticlesTimelineMutableFlow = MutableStateFlow(getShowReadArticlesTimeline())
     internal val showReadArticlesTimelineFlow: StateFlow<Boolean> = showReadArticlesTimelineMutableFlow.asStateFlow()
 
@@ -52,6 +60,19 @@ class SettingsRepository(
 
     private val uncategorizedPositionMutableFlow = MutableStateFlow(getUncategorizedPosition())
     internal val uncategorizedPositionFlow: StateFlow<Int> = uncategorizedPositionMutableFlow.asStateFlow()
+
+    init {
+        migrateToFlowMode()
+    }
+
+    private fun migrateToFlowMode() {
+        if (settings.getBoolean(SettingsFields.FLOW_MODE_MIGRATED.name, false)) return
+
+        setShowReadArticlesTimeline(true)
+        setMarkFeedAsReadWhenScrolling(false)
+        setHideReadItems(false)
+        settings[SettingsFields.FLOW_MODE_MIGRATED.name] = true
+    }
 
     fun getFavouriteBrowserId(): String? =
         settings.getStringOrNull(SettingsFields.FAVOURITE_BROWSER_ID.name)
@@ -263,6 +284,19 @@ class SettingsRepository(
     internal companion object {
         const val DEFAULT_READER_MODE_FONT_SIZE = ReaderModeDefaults.FONT_SIZE
     }
+
+    fun getCalmInsightsEnabled(): Boolean =
+        settings.getBoolean(SettingsFields.CALM_INSIGHTS_ENABLED.name, true)
+
+    fun setCalmInsightsEnabled(value: Boolean) {
+        settings[SettingsFields.CALM_INSIGHTS_ENABLED.name] = value
+        calmInsightsEnabledMutableFlow.value = value
+    }
+
+    fun dismissFlowOnboarding() {
+        settings[SettingsFields.FLOW_ONBOARDING_SEEN.name] = true
+        showFlowOnboardingMutableFlow.value = false
+    }
 }
 
 private enum class SettingsFields {
@@ -284,7 +318,10 @@ private enum class SettingsFields {
     BACKGROUND_SYNC_CHARGING_ONLY,
     THEME_MODE,
     REDUCE_MOTION_ENABLED,
+    CALM_INSIGHTS_ENABLED,
     REFRESH_FEEDS_ON_LAUNCH,
     NOTIFICATION_MODE,
     UNCATEGORIZED_CATEGORY_POSITION,
+    FLOW_MODE_MIGRATED,
+    FLOW_ONBOARDING_SEEN,
 }

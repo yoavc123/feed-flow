@@ -39,9 +39,6 @@ internal fun ReadingBehaviorScreenContent(
     setArticleOpenMode: (ArticleOpenMode) -> Unit,
     setSaveReaderModeContent: (Boolean) -> Unit,
     setPrefetchArticleContent: (Boolean) -> Unit,
-    setMarkReadWhenScrolling: (Boolean) -> Unit,
-    setShowReadItem: (Boolean) -> Unit,
-    setHideReadItems: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -106,32 +103,6 @@ internal fun ReadingBehaviorScreenContent(
             }
 
             item {
-                SettingSwitchItem(
-                    title = LocalFeedFlowStrings.current.toggleMarkReadWhenScrolling,
-                    isChecked = state.isMarkReadWhenScrollingEnabled,
-                    onCheckedChange = setMarkReadWhenScrolling,
-                )
-            }
-
-            item {
-                SettingSwitchItem(
-                    modifier = Modifier.testTag(SettingsE2eIds.READING_BEHAVIOR_SHOW_READ),
-                    title = LocalFeedFlowStrings.current.settingsToggleShowReadArticles,
-                    isChecked = state.isShowReadItemsEnabled,
-                    onCheckedChange = setShowReadItem,
-                )
-            }
-
-            item {
-                SettingSwitchItem(
-                    modifier = Modifier.testTag(SettingsE2eIds.READING_BEHAVIOR_HIDE_READ),
-                    title = LocalFeedFlowStrings.current.settingsHideReadItems,
-                    isChecked = state.isHideReadItemsEnabled,
-                    onCheckedChange = setHideReadItems,
-                )
-            }
-
-            item {
                 Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding()))
             }
         }
@@ -156,9 +127,6 @@ private fun ReadingBehaviorScreenContentPreview() {
             setArticleOpenMode = {},
             setSaveReaderModeContent = {},
             setPrefetchArticleContent = {},
-            setMarkReadWhenScrolling = {},
-            setShowReadItem = {},
-            setHideReadItems = {},
         )
     }
 }

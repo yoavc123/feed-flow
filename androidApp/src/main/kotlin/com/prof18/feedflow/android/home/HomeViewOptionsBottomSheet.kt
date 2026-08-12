@@ -1,10 +1,7 @@
 package com.prof18.feedflow.android.home
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -12,11 +9,9 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.prof18.feedflow.core.model.FeedOrder
 import com.prof18.feedflow.shared.presentation.model.HomeViewMenuState
@@ -28,7 +23,6 @@ import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 fun HomeViewOptionsBottomSheet(
     state: HomeViewMenuState,
     onFeedOrderChange: (FeedOrder) -> Unit,
-    onShowReadArticlesTimelineChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(),
 ) {
@@ -65,22 +59,6 @@ fun HomeViewOptionsBottomSheet(
                 ) {
                     Text(strings.settingsFeedOrderOldestFirst)
                 }
-            }
-
-            Spacer(modifier = Modifier.height(Spacing.regular))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = strings.settingsToggleShowReadArticles,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = state.showReadArticlesTimeline,
-                    onCheckedChange = onShowReadArticlesTimelineChange,
-                )
             }
         }
     }

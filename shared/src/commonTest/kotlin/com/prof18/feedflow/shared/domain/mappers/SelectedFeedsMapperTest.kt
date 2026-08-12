@@ -4,6 +4,7 @@ import com.prof18.feedflow.core.domain.DateFormatter
 import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.DateFormat
 import com.prof18.feedflow.core.model.FeedSourceCategory
+import com.prof18.feedflow.core.model.FlowPace
 import com.prof18.feedflow.core.model.TimeFormat
 import com.prof18.feedflow.db.SelectFeeds
 import kotlin.test.Test
@@ -11,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 
 class SelectedFeedsMapperTest {
 
@@ -135,6 +137,30 @@ class SelectedFeedsMapperTest {
         assertEquals(ArticleOpenMode.FEED_CONTENT, result.feedSource.articleOpenMode)
     }
 
+    @Test
+    fun `toFeedItem calculates freshness from the source pace`() {
+        val now = 10.hours.inWholeMilliseconds
+        val flashItem = createSelectFeeds(
+            pubDate = 0,
+            feedSourceFlowPace = FlowPace.FLASH,
+        ).toFeedItem(
+            dateFormatter = dateFormatter,
+            settings = FeedItemMappingSettings(),
+            nowMillis = now,
+        )
+        val slowItem = createSelectFeeds(
+            pubDate = 0,
+            feedSourceFlowPace = FlowPace.SLOW,
+        ).toFeedItem(
+            dateFormatter = dateFormatter,
+            settings = FeedItemMappingSettings(),
+            nowMillis = now,
+        )
+
+        assertEquals(0f, flashItem.freshness)
+        assertTrue(slowItem.freshness > 0f)
+    }
+
     private fun createSelectFeeds(
         title: String = "Title",
         subtitle: String? = "Subtitle",
@@ -147,6 +173,7 @@ class SelectedFeedsMapperTest {
         isPinned: Boolean? = false,
         isNotificationEnabled: Boolean? = false,
         feedSourceHideImages: Boolean? = false,
+        feedSourceFlowPace: FlowPace? = null,
     ): SelectFeeds = SelectFeeds(
         url_hash = "item-1",
         url = "https://example.com/item-1",
@@ -154,7 +181,10 @@ class SelectedFeedsMapperTest {
         subtitle = subtitle,
         image_url = imageUrl,
         pub_date = pubDate,
+        first_seen_at = pubDate ?: 0L,
         comments_url = "https://example.com/comments",
+        author = null,
+        content_fetched = false,
         is_read = false,
         is_bookmarked = false,
         notification_sent = false,
@@ -170,6 +200,11 @@ class SelectedFeedsMapperTest {
         feed_source_is_pinned = isPinned,
         feed_source_notifications_enabled = isNotificationEnabled,
         feed_source_hide_images = feedSourceHideImages,
+        feed_source_flow_pace = feedSourceFlowPace,
+        feed_source_muted_until = null,
+        feed_source_voice_status = null,
+        feed_source_presentation = null,
+        feed_source_rate_limit = null,
         feed_source_fetch_failed = false,
     )
 

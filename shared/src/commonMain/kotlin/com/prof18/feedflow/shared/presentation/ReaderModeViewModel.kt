@@ -2,6 +2,7 @@ package com.prof18.feedflow.shared.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prof18.feedflow.core.domain.TimeProvider
 import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.FeedItem
 import com.prof18.feedflow.core.model.FeedItemId
@@ -10,6 +11,7 @@ import com.prof18.feedflow.core.model.ParsingResult
 import com.prof18.feedflow.core.model.ReaderFontSettings
 import com.prof18.feedflow.core.model.ReaderModeData
 import com.prof18.feedflow.core.model.ReaderModeState
+import com.prof18.feedflow.core.model.ReadingProgress
 import com.prof18.feedflow.core.model.ShownContentSource
 import com.prof18.feedflow.core.model.canOpenWebReaderMode
 import com.prof18.feedflow.core.model.hasNoUrl
@@ -24,6 +26,7 @@ import com.prof18.feedflow.shared.domain.feeditem.FeedItemContentFileHandler
 import com.prof18.feedflow.shared.domain.feeditem.FeedItemParserWorker
 import io.ktor.http.Url
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -39,6 +42,7 @@ class ReaderModeViewModel internal constructor(
     private val feedStateRepository: FeedStateRepository,
     private val databaseHelper: DatabaseHelper,
     private val feedContentPreparer: FeedContentPreparer,
+    private val timeProvider: TimeProvider,
 ) : ViewModel() {
 
     private val readerModeMutableState: MutableStateFlow<ReaderModeState> = MutableStateFlow(
@@ -63,7 +67,11 @@ class ReaderModeViewModel internal constructor(
     private val currentArticleMutableState = MutableStateFlow<FeedItemUrlInfo?>(null)
     val currentArticleState = currentArticleMutableState.asStateFlow()
 
+    private val readingProgressMutableState = MutableStateFlow<ReadingProgress?>(null)
+    val readingProgressState = readingProgressMutableState.asStateFlow()
+
     private var loadReaderModeJob: Job? = null
+    private var progressSaveJob: Job? = null
     private var currentArticleId: String? = null
     private var currentShownSource: ShownContentSource? = null
     private var lastRequestedSource: ShownContentSource? = null
@@ -88,7 +96,9 @@ class ReaderModeViewModel internal constructor(
 
     fun resetState() {
         loadReaderModeJob?.cancel()
+        cleanupTransientContent(currentArticleMutableState.value)
         currentArticleId = null
+        readingProgressMutableState.value = null
         currentShownSource = null
         lastRequestedSource = null
         clearSelection()
@@ -120,6 +130,9 @@ class ReaderModeViewModel internal constructor(
             if (currentArticleId != requestedArticleId) return@launch
 
             val state = if (data != null) {
+                if (urlInfo.isBookmarked) {
+                    databaseHelper.updateReadingHistoryContent(requestedArticleId, data.content)
+                }
                 ReaderModeState.Success(data)
             } else {
                 htmlNotAvailableFor(urlInfo)
@@ -256,6 +269,24 @@ class ReaderModeViewModel internal constructor(
     fun updateBookmarkStatus(feedItemId: FeedItemId, bookmarked: Boolean) {
         viewModelScope.launch {
             feedActionsRepository.updateBookmarkStatus(feedItemId, bookmarked)
+            if (!bookmarked) {
+                feedItemContentFileHandler.deleteFeedItemContent(feedItemId.id)
+                databaseHelper.clearReadingHistoryContent(feedItemId.id)
+            }
+        }
+    }
+
+    fun updateReadingProgress(fraction: Float) {
+        val articleId = currentArticleId ?: return
+        val normalizedFraction = fraction.coerceIn(0f, 1f)
+        readingProgressMutableState.value = ReadingProgress(
+            fraction = normalizedFraction,
+            updatedAtMillis = timeProvider.nowMillis(),
+        )
+        progressSaveJob?.cancel()
+        progressSaveJob = viewModelScope.launch {
+            delay(PROGRESS_SAVE_DEBOUNCE_MILLIS)
+            databaseHelper.upsertReadingProgress(articleId, normalizedFraction)
         }
     }
 
@@ -273,10 +304,32 @@ class ReaderModeViewModel internal constructor(
 
     private fun selectArticle(urlInfo: FeedItemUrlInfo): Boolean {
         val isSameArticle = currentArticleId == urlInfo.id && readerModeMutableState.value.isForArticle(urlInfo.id)
+        val articleChanged = currentArticleId != urlInfo.id
+        if (articleChanged) {
+            cleanupTransientContent(currentArticleMutableState.value)
+        }
         currentArticleId = urlInfo.id
         currentArticleMutableState.value = urlInfo
+        if (articleChanged) {
+            readingProgressMutableState.value = null
+            viewModelScope.launch {
+                databaseHelper.recordArticleOpened(urlInfo.id, timeProvider.nowMillis())
+                val storedProgress = databaseHelper.getReadingProgress(urlInfo.id)
+                if (currentArticleId == urlInfo.id) {
+                    readingProgressMutableState.value = storedProgress
+                }
+            }
+        }
         updateNavigationFlags()
         return isSameArticle
+    }
+
+    private fun cleanupTransientContent(article: FeedItemUrlInfo?) {
+        if (article == null || article.isBookmarked) return
+        viewModelScope.launch {
+            feedItemContentFileHandler.deleteFeedItemContent(article.id)
+            databaseHelper.clearReadingHistoryContent(article.id)
+        }
     }
 
     private fun showFallbackForArticle(urlInfo: FeedItemUrlInfo) {
@@ -375,6 +428,7 @@ class ReaderModeViewModel internal constructor(
     private companion object {
         private val PARSE_TIMEOUT = 20.seconds
         private const val MIN_FEED_CONTENT_LENGTH = 200
+        private const val PROGRESS_SAVE_DEBOUNCE_MILLIS = 300L
         private val HTML_TAG_REGEX = Regex("<[^>]*>")
         private val WHITESPACE_REGEX = Regex("\\s+")
     }

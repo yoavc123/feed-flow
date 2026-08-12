@@ -56,8 +56,6 @@ internal fun AndroidFeedSourceDrawerItem(
     onPinFeedClick: (FeedSource) -> Unit,
     onChangeFeedCategoryClick: (FeedSource) -> Unit,
     onOpenWebsite: (String) -> Unit,
-    onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit,
-    unreadCount: Long,
     modifier: Modifier = Modifier,
     dragHandle: (@Composable () -> Unit)? = null,
 ) {
@@ -130,15 +128,6 @@ internal fun AndroidFeedSourceDrawerItem(
                     }
                 }
 
-                if (unreadCount > 0 && dragHandle == null) {
-                    Text(
-                        modifier = Modifier.padding(start = Spacing.small),
-                        text = unreadCount.toString(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = itemColors.textColor(selected).value,
-                    )
-                }
-
                 dragHandle?.invoke()
             }
 
@@ -153,16 +142,6 @@ internal fun AndroidFeedSourceDrawerItem(
                 ),
             ) {
                 val strings = LocalFeedFlowStrings.current
-
-                if (unreadCount > 0) {
-                    DropdownMenuItem(
-                        text = { Text(strings.markAllReadButton) },
-                        onClick = {
-                            onMarkAllReadForFeedSourceClick(feedSource)
-                            showFeedMenu = false
-                        },
-                    )
-                }
 
                 val websiteUrl = feedSource.websiteUrlFallback()
                 if (websiteUrl != null) {

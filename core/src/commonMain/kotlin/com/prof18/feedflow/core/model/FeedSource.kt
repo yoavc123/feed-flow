@@ -16,9 +16,23 @@ data class FeedSource(
     val isHideImagesEnabled: Boolean,
     val pinnedPosition: Int = 0,
     val position: Int = 0,
+    val flowPace: FlowPace? = null,
+    val mutedUntilMillis: Long? = null,
+    val voiceStatus: VoiceStatus = VoiceStatus.AUTOMATIC,
+    val sourcePresentation: SourcePresentation = SourcePresentation.STANDARD,
+    val rateLimit: RateLimit = RateLimit.NONE,
 ) {
     fun websiteUrlFallback(): String? =
         websiteUrl ?: url.toWebsiteBaseUrl()
+
+    fun isMuted(nowMillis: Long): Boolean =
+        mutedUntilMillis?.let { it > nowMillis } == true
+
+    fun isVoice(): Boolean = when (voiceStatus) {
+        VoiceStatus.VOICE -> true
+        VoiceStatus.NOT_VOICE -> false
+        VoiceStatus.AUTOMATIC -> flowPace == FlowPace.SLOW || flowPace == FlowPace.TIMELESS
+    }
 }
 
 private fun String.toWebsiteBaseUrl(): String? {

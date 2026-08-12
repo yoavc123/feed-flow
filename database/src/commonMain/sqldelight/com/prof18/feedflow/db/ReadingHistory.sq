@@ -1,0 +1,86 @@
+CREATE TABLE reading_history (
+    feed_item_id TEXT NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL,
+    title TEXT,
+    summary TEXT,
+    author TEXT,
+    feed_source_id TEXT NOT NULL,
+    feed_source_title TEXT NOT NULL,
+    article_text TEXT,
+    opened_at INTEGER NOT NULL
+);
+
+CREATE INDEX idx_reading_history_opened_at ON reading_history(opened_at DESC);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS reading_history_search USING FTS4(
+    feed_item_id TEXT NOT NULL,
+    title TEXT,
+    summary TEXT,
+    author TEXT,
+    feed_source_title TEXT,
+    article_text TEXT,
+    tokenize=unicode61 "tokenchars=+#"
+);
+
+CREATE TRIGGER IF NOT EXISTS populate_reading_history_search
+AFTER INSERT ON reading_history
+BEGIN
+    DELETE FROM reading_history_search WHERE feed_item_id = new.feed_item_id;
+    INSERT INTO reading_history_search(
+        feed_item_id, title, summary, author, feed_source_title, article_text
+    ) VALUES (
+        new.feed_item_id, new.title, new.summary, new.author, new.feed_source_title, new.article_text
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_reading_history_search
+AFTER UPDATE ON reading_history
+BEGIN
+    DELETE FROM reading_history_search WHERE feed_item_id = new.feed_item_id;
+    INSERT INTO reading_history_search(
+        feed_item_id, title, summary, author, feed_source_title, article_text
+    ) VALUES (
+        new.feed_item_id, new.title, new.summary, new.author, new.feed_source_title, new.article_text
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS delete_reading_history_search
+BEFORE DELETE ON reading_history
+BEGIN DELETE FROM reading_history_search WHERE feed_item_id = old.feed_item_id;
+END;
+
+upsertReadingHistory:
+INSERT OR REPLACE INTO reading_history(
+    feed_item_id,
+    url,
+    title,
+    summary,
+    author,
+    feed_source_id,
+    feed_source_title,
+    article_text,
+    opened_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateReadingHistoryContent:
+UPDATE reading_history SET article_text = :articleText WHERE feed_item_id = :feedItemId;
+
+clearReadingHistoryContent:
+UPDATE reading_history SET article_text = NULL WHERE feed_item_id = :feedItemId;
+
+selectReadingHistory:
+SELECT * FROM reading_history ORDER BY opened_at DESC;
+
+searchReadingHistory:
+SELECT reading_history.*
+FROM reading_history_search
+INNER JOIN reading_history
+ON reading_history_search.feed_item_id = reading_history.feed_item_id
+WHERE reading_history_search MATCH :query
+ORDER BY reading_history.opened_at DESC;
+
+deleteReadingHistory:
+DELETE FROM reading_history WHERE feed_item_id = ?;
+
+deleteAllReadingHistory:
+DELETE FROM reading_history;

@@ -8,21 +8,20 @@ appId: com.prof18.feedflow.debug
 - longPressOn:
     id: article_row_e2e_article_newest_unread
 - tapOn:
-    text: "Add to bookmarks"
-- tapOn:
-    id: drawer_menu_button
-- tapOn:
-    id: drawer_bookmarks
+    text: "Let Go"
+- assertNotVisible:
+    id: article_row_e2e_article_newest_unread
+- assertVisible: "Article released from your Flow"
+- tapOn: "Undo"
 - assertVisible:
     id: article_row_e2e_article_newest_unread
 - longPressOn:
     id: article_row_e2e_article_newest_unread
 - tapOn:
-    text: "Mark as read"
+    text: "Add to bookmarks"
 - tapOn:
     id: drawer_menu_button
-    optional: true
 - tapOn:
-    id: drawer_read
+    id: drawer_bookmarks
 - assertVisible:
     id: article_row_e2e_article_newest_unread

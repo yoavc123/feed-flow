@@ -2,6 +2,7 @@ package com.prof18.feedflow.shared.ui.search
 
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
+import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.FeedFilter
 import com.prof18.feedflow.core.model.FeedFontSizes
 import com.prof18.feedflow.core.model.FeedItemDisplaySettings
@@ -58,6 +61,7 @@ import com.prof18.feedflow.core.model.FeedItemId
 import com.prof18.feedflow.core.model.FeedItemUrlInfo
 import com.prof18.feedflow.core.model.FeedItemUrlTitle
 import com.prof18.feedflow.core.model.FeedLayout
+import com.prof18.feedflow.core.model.ReadingHistoryItem
 import com.prof18.feedflow.core.model.SearchFilter
 import com.prof18.feedflow.core.model.SearchState
 import com.prof18.feedflow.i18n.FeedFlowStrings
@@ -182,7 +186,6 @@ fun SearchScreenContent(
                                 feedFontSizes = feedFontSizes,
                                 feedLayout = itemFeedLayout,
                                 isGridCell = true,
-                                currentFeedFilter = currentFeedFilter,
                                 shareCommentsMenuLabel = shareCommentsMenuLabel,
                                 shareMenuLabel = shareMenuLabel,
                                 onFeedItemClick = onFeedItemClick,
@@ -217,7 +220,6 @@ fun SearchScreenContent(
                                         item = item,
                                         feedFontSizes = feedFontSizes,
                                         feedLayout = itemFeedLayout,
-                                        currentFeedFilter = currentFeedFilter,
                                         shareCommentsMenuLabel = shareCommentsMenuLabel,
                                         shareMenuLabel = shareMenuLabel,
                                         onFeedItemClick = onFeedItemClick,
@@ -230,6 +232,18 @@ fun SearchScreenContent(
                                         onMarkAllAboveAsRead = onMarkAllAboveAsRead,
                                         onMarkAllBelowAsRead = onMarkAllBelowAsRead,
                                         feedItemDisplaySettings = feedItemDisplaySettings,
+                                    )
+                                }
+                            }
+
+                            is SearchState.HistoryFound -> {
+                                items(
+                                    items = searchState.items,
+                                    key = { it.feedItemId },
+                                ) { item ->
+                                    ReadingHistorySearchItem(
+                                        item = item,
+                                        onClick = { onFeedItemClick(item.toUrlInfo()) },
                                     )
                                 }
                             }
@@ -246,11 +260,43 @@ fun SearchScreenContent(
 }
 
 @Composable
+private fun ReadingHistorySearchItem(
+    item: ReadingHistoryItem,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(item.title.orEmpty()) },
+        overlineContent = {
+            Text(
+                listOfNotNull(item.author, item.feedSourceTitle)
+                    .distinct()
+                    .joinToString(" · "),
+            )
+        },
+        supportingContent = item.summary?.let { summary ->
+            {
+                Text(summary, maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+}
+
+private fun ReadingHistoryItem.toUrlInfo() = FeedItemUrlInfo(
+    id = feedItemId,
+    url = url,
+    title = title,
+    isBookmarked = false,
+    articleOpenMode = ArticleOpenMode.DEFAULT,
+    commentsUrl = null,
+    feedSourceTitle = feedSourceTitle,
+)
+
+@Composable
 private fun SearchFeedItem(
     item: com.prof18.feedflow.core.model.FeedItem,
     feedFontSizes: FeedFontSizes,
     feedLayout: FeedLayout,
-    currentFeedFilter: FeedFilter?,
     shareCommentsMenuLabel: String,
     shareMenuLabel: String,
     onFeedItemClick: (FeedItemUrlInfo) -> Unit,
@@ -282,7 +328,6 @@ private fun SearchFeedItem(
             onOpenFeedWebsite = onOpenFeedWebsite,
             feedLayout = feedLayout,
             isGridCell = isGridCell,
-            currentFeedFilter = currentFeedFilter ?: FeedFilter.Timeline,
             onShareClick = onShareClick,
             onMarkAllAboveAsRead = onMarkAllAboveAsRead,
             onMarkAllBelowAsRead = onMarkAllBelowAsRead,
@@ -403,8 +448,8 @@ private fun SearchFilterChipsRow(
                 add(SearchFilter.CurrentFeed)
             }
             add(SearchFilter.All)
-            add(SearchFilter.Read)
             add(SearchFilter.Bookmarks)
+            add(SearchFilter.History)
         }
     }
 
@@ -458,17 +503,23 @@ private fun SearchFilter.getLabel(strings: FeedFlowStrings, currentFeedLabel: St
         SearchFilter.CurrentFeed -> currentFeedLabel ?: strings.searchFilterAll
         SearchFilter.All -> strings.searchFilterAll
         SearchFilter.Read -> strings.searchFilterRead
-        SearchFilter.Bookmarks -> strings.searchFilterBookmarks
+        SearchFilter.Bookmarks -> strings.savedTitle
+        SearchFilter.History -> strings.searchFilterHistory
     }
 }
 
 private fun FeedFilter.getLabel(strings: FeedFlowStrings): String {
     return when (this) {
         is FeedFilter.Category -> feedCategory.title
+        is FeedFilter.Stream -> feedCategory.title
         is FeedFilter.Source -> feedSource.title
         FeedFilter.Uncategorized -> strings.noCategory
+        FeedFilter.UncategorizedStream -> strings.noCategory
         FeedFilter.Timeline -> strings.searchFilterAll
+        FeedFilter.Flow -> strings.flowTitle
+        FeedFilter.Voices -> strings.voicesTitle
         FeedFilter.Read -> strings.searchFilterRead
         FeedFilter.Bookmarks -> strings.searchFilterBookmarks
+        FeedFilter.Saved -> strings.drawerTitleBookmarks
     }
 }

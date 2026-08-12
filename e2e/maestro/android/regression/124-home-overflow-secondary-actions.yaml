@@ -8,15 +8,13 @@ appId: com.prof18.feedflow.debug
 - tapOn:
     id: home_more_menu_button
 - assertVisible: "Sort & filter"
-- assertVisible: "Delete week-old articles"
+- assertVisible: "Release expired articles"
 - tapOn: "Sort & filter"
 - assertVisible: "Sort by Date"
-- assertVisible: "Show read articles in lists"
 - tapOn: "Oldest First"
-- tapOn: "Show read articles in lists"
 - back
 - tapOn:
     id: home_more_menu_button
-- tapOn: "Delete week-old articles"
-- assertVisible: "Are you sure you want to delete old articles?"
+- tapOn: "Release expired articles"
+- assertVisible: "Remove articles that have already flowed past the seven-day horizon? Saved articles stay available."
 - tapOn: "Cancel"

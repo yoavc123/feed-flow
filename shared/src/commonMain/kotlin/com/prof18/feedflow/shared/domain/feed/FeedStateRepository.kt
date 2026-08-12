@@ -2,6 +2,7 @@ package com.prof18.feedflow.shared.domain.feed
 
 import co.touchlab.kermit.Logger
 import com.prof18.feedflow.core.domain.DateFormatter
+import com.prof18.feedflow.core.domain.TimeProvider
 import com.prof18.feedflow.core.model.FeedFilter
 import com.prof18.feedflow.core.model.FeedItem
 import com.prof18.feedflow.core.model.FeedItemId
@@ -35,6 +36,7 @@ internal class FeedStateRepository(
     private val settingsRepository: SettingsRepository,
     private val feedAppearanceSettingsRepository: FeedAppearanceSettingsRepository,
     private val dateFormatter: DateFormatter,
+    private val timeProvider: TimeProvider,
 ) {
     private val errorMutableState: MutableSharedFlow<ErrorState> = MutableSharedFlow()
     val errorState = errorMutableState.asSharedFlow()
@@ -47,13 +49,17 @@ internal class FeedStateRepository(
     private val mutableFeedState: MutableStateFlow<ImmutableList<FeedItem>> = MutableStateFlow(persistentListOf())
     val feedState = mutableFeedState.asStateFlow()
 
+    private val mutablePinnedFeedState: MutableStateFlow<ImmutableList<FeedItem>> =
+        MutableStateFlow(persistentListOf())
+    val pinnedFeedState = mutablePinnedFeedState.asStateFlow()
+
     private val mutableFeedListVersion: MutableStateFlow<Long> = MutableStateFlow(0L)
     val feedListVersion = mutableFeedListVersion.asStateFlow()
 
     private val pendingNewArticlesMutableState = MutableStateFlow(0)
     val pendingNewArticlesState: StateFlow<Int> = pendingNewArticlesMutableState.asStateFlow()
 
-    private val currentFeedFilterMutableState: MutableStateFlow<FeedFilter> = MutableStateFlow(FeedFilter.Timeline)
+    private val currentFeedFilterMutableState: MutableStateFlow<FeedFilter> = MutableStateFlow(FeedFilter.Flow)
     val currentFeedFilter: StateFlow<FeedFilter> = currentFeedFilterMutableState.asStateFlow()
 
     private var lastFetchedPubDate: Long? = null
@@ -65,14 +71,32 @@ internal class FeedStateRepository(
         pendingNewArticlesMutableState.update { 0 }
         try {
             val feedOrder = feedAppearanceSettingsRepository.getFeedOrder()
+            val nowMillis = timeProvider.nowMillis()
+            val currentFilter = currentFeedFilterMutableState.value
 
             val feeds = executeWithRetry {
                 databaseHelper.getFeedItems(
-                    feedFilter = currentFeedFilterMutableState.value,
+                    feedFilter = currentFilter,
                     pageSize = FEED_DB_PAGE_SIZE,
                     showReadItems = settingsRepository.getShowReadArticlesTimeline(),
                     sortOrder = feedOrder,
+                    currentTimeMillis = nowMillis,
+                    pinnedFilter = currentFilter.regularPinnedFilter(),
                 )
+            }
+            val pinnedFeeds = if (currentFilter.hasPinnedSection()) {
+                executeWithRetry {
+                    databaseHelper.getFeedItems(
+                        feedFilter = currentFilter,
+                        pageSize = PINNED_DB_PAGE_SIZE,
+                        showReadItems = true,
+                        sortOrder = feedOrder,
+                        currentTimeMillis = nowMillis,
+                        pinnedFilter = 1,
+                    )
+                }
+            } else {
+                emptyList()
             }
             updateCursor(feeds)
             val settings = feedAppearanceSettingsRepository.getFeedItemMappingSettings()
@@ -85,6 +109,16 @@ internal class FeedStateRepository(
                     it.toFeedItem(
                         dateFormatter = dateFormatter,
                         settings = settings,
+                        nowMillis = nowMillis,
+                    )
+                }.toImmutableList()
+            }
+            mutablePinnedFeedState.update {
+                pinnedFeeds.map { row ->
+                    row.toFeedItem(
+                        dateFormatter = dateFormatter,
+                        settings = settings,
+                        nowMillis = nowMillis,
                     )
                 }.toImmutableList()
             }
@@ -97,6 +131,7 @@ internal class FeedStateRepository(
     suspend fun refreshPendingNewArticlesCount() {
         try {
             val feedFilter = currentFeedFilterMutableState.value
+            val nowMillis = timeProvider.nowMillis()
             val feedListVersion = mutableFeedListVersion.value
             val visibleIds = feedState.value.map { it.id }.toHashSet()
             val feeds = executeWithRetry {
@@ -105,6 +140,8 @@ internal class FeedStateRepository(
                     pageSize = FEED_DB_PAGE_SIZE,
                     showReadItems = settingsRepository.getShowReadArticlesTimeline(),
                     sortOrder = FeedOrder.NEWEST_FIRST,
+                    currentTimeMillis = nowMillis,
+                    pinnedFilter = feedFilter.regularPinnedFilter(),
                 )
             }
             if (currentFeedFilterMutableState.value != feedFilter || mutableFeedListVersion.value != feedListVersion) {
@@ -125,14 +162,18 @@ internal class FeedStateRepository(
         isLoadingMore = true
         try {
             val feedOrder = feedAppearanceSettingsRepository.getFeedOrder()
+            val nowMillis = timeProvider.nowMillis()
+            val currentFilter = currentFeedFilterMutableState.value
             val feeds = executeWithRetry {
                 databaseHelper.getFeedItems(
-                    feedFilter = currentFeedFilterMutableState.value,
+                    feedFilter = currentFilter,
                     pageSize = FEED_DB_PAGE_SIZE,
                     showReadItems = settingsRepository.getShowReadArticlesTimeline(),
                     sortOrder = feedOrder,
                     lastPubDate = lastFetchedPubDate,
                     lastUrlHash = lastFetchedUrlHash,
+                    currentTimeMillis = nowMillis,
+                    pinnedFilter = currentFilter.regularPinnedFilter(),
                 )
             }
             updateCursor(feeds)
@@ -142,6 +183,7 @@ internal class FeedStateRepository(
                     it.toFeedItem(
                         dateFormatter = dateFormatter,
                         settings = settings,
+                        nowMillis = nowMillis,
                     )
                 }.toImmutableList()
                 (currentItems + newList).toImmutableList()
@@ -192,7 +234,7 @@ internal class FeedStateRepository(
             getFeeds()
             return
         }
-        val newFeedFilter = FeedFilter.Category(
+        val newFeedFilter = FeedFilter.Stream(
             feedCategory = category,
         )
         currentFeedFilterMutableState.update {
@@ -289,6 +331,15 @@ internal class FeedStateRepository(
                     feedItem
                 }
             }.toImmutableList()
+        }
+    }
+
+    fun letGo(feedItemId: FeedItemId) {
+        updateFeedState(incrementListVersion = true) { currentItems ->
+            currentItems.filterNot { it.id == feedItemId.id }.toImmutableList()
+        }
+        mutablePinnedFeedState.update { currentItems ->
+            currentItems.filterNot { it.id == feedItemId.id }.toImmutableList()
         }
     }
 
@@ -425,6 +476,13 @@ internal class FeedStateRepository(
 
     companion object {
         internal const val FEED_DB_PAGE_SIZE = 40L
+        private const val PINNED_DB_PAGE_SIZE = 200L
         private const val PAGINATION_THRESHOLD = 5
     }
 }
+
+private fun FeedFilter.hasPinnedSection(): Boolean =
+    this == FeedFilter.Flow || this == FeedFilter.Timeline
+
+private fun FeedFilter.regularPinnedFilter(): Long? =
+    if (hasPinnedSection()) 0 else null

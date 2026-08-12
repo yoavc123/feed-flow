@@ -17,6 +17,7 @@ internal expect fun FeedItemContextMenu(
     shareCommentsMenuLabel: String,
     onBookmarkClick: (FeedItemId, Boolean) -> Unit,
     onReadStatusClick: (FeedItemId, Boolean) -> Unit,
+    onLetGo: ((FeedItemId) -> Unit)?,
     onCommentClick: (FeedItemUrlInfo) -> Unit,
     closeMenu: () -> Unit,
     onShareClick: (FeedItemUrlTitle) -> Unit,

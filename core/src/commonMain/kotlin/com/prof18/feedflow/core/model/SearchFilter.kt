@@ -5,4 +5,5 @@ enum class SearchFilter {
     CurrentFeed,
     Read,
     Bookmarks,
+    History,
 }

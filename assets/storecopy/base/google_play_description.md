@@ -1,46 +1,32 @@
-FeedFlow is a minimal RSS reader for people who want a clean, chronological timeline — no algorithms, no clutter, no noise. Just your feeds, in order.
+FeedFlow is a calm, chronological RSS reader for Android. Articles arrive in your Flow, stay for a source-specific amount of time, soften as they age, and leave naturally. There are no unread totals and no inbox to finish.
 
-Whether you follow news sites, blogs, or YouTube channels via RSS, FeedFlow gives you a fast, distraction-free way to keep up with everything you care about.
+Let Reading Stay Optional
+- Choose Flash, Daily, Standard, Slow, or Timeless pacing at app, Stream, or source level.
+- Let Go of an article locally with a six-second undo window, without changing its remote read state.
+- Save articles you want to keep permanently and read them offline.
+- Pin sources whose articles should never expire.
 
-Read Articles Your Way
-- Open articles in your default browser, or pick a dedicated browser for reading sessions.
-- Use Reader Mode for a distraction-free article view with adjustable text size and spacing.
-- Prefetch and cache full article content for offline reading — read articles anywhere, even without an internet connection.
-- View the original web page or switch to a clean, readable format — the choice is yours.
+Read With Focus
+- Open articles in Reader Mode, the in-app browser, or your preferred browser.
+- Use Focus mode to review one article at a time.
+- Return to long reads with human progress labels such as “Just started” and “Halfway through.”
+- Search titles, summaries, authors, sources, and locally retained article text in reading history.
 
-Sync Feeds Across All Your Devices
-- Keep everything local, or sync feeds across devices with multiple backends.
-- Cloud storage sync with Dropbox or Google Drive.
-- Self-hosted and server sync with FreshRSS, Miniflux, Feedbin, or BazQux.
-- Your feeds, read status, and bookmarks stay in sync across Android, iOS, macOS, Windows, and Linux.
-- Switch between phone, tablet, and desktop without losing your place.
+Organize Sources, Not Obligations
+- Group sources into Streams without turning them into unread queues.
+- Mark personal sources as Voices and browse them in a dedicated timeline.
+- Tune each source’s pace, mute period, pin state, image visibility, full-content preference, webcomic layout, and rate limit.
+- Receive deterministic, on-device suggestions when a source floods the Flow or your reading habits suggest an adjustment.
 
-Stay Organized with Feeds and Categories
-- Import and export feeds with OPML — migrate from any other RSS reader or news reader in minutes.
-- Block noisy keywords to filter out unwanted content from your feed.
-- Organize RSS feeds into categories and bookmark articles to read later.
-- Search across all your feeds and articles to quickly find the content you need.
+Sync Your Way
+- Keep everything local or sync through Dropbox or Google Drive.
+- Connect to FreshRSS, Miniflux, Feedbin, or BazQux Reader.
+- Existing remote read state remains compatible for sync, while FeedFlow keeps it out of the reading experience.
 
-A News Reading Experience You Control
-- Dark mode, light mode, and OLED black theme for comfortable reading day and night.
-- Background refresh keeps your feed list up to date with new articles and posts.
+Designed for Android
+- Material You plus Paper, Tide, Twilight, Hearth, OLED, Slate, Terminal, and Solarized palettes.
+- Responsive layouts for phones, foldables, and tablets.
+- Reduce-motion support, TalkBack-friendly controls, and Android predictive back behavior.
+- Google Play and F-Droid builds with the same calm Flow experience.
 
-Built for RSS, Atom, and the Open Web
-- Full support for RSS 2.0, RSS 1.0, and Atom feed formats.
-- Subscribe to blogs, news sites, YouTube channels, and more.
-- No account required — add feeds directly by URL or browse curated feed suggestions to get started.
-- OPML import and export means you're never locked in to any single app.
-
-Perfect For
-- News enthusiasts who want a chronological feed without algorithmic recommendations.
-- Blog readers who want all their favorite sites in one clean timeline.
-- Self-hosted enthusiasts running FreshRSS, Miniflux, or similar services.
-- Anyone switching from another feed reader — OPML import makes migration simple.
-
-Why FeedFlow?
-- No algorithmic feed — your timeline is always chronological.
-- Open source with an active community and regular updates.
-- Available on Android, iOS, macOS, Windows, and Linux.
-- Translated into 25+ languages by contributors worldwide.
-
-Take back control of your news and reading — download FeedFlow today.
+FeedFlow is open source, has no algorithmic ranking, and sends no article content to a cloud AI service.

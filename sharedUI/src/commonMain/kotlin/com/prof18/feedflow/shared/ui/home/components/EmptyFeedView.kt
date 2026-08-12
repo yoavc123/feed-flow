@@ -50,9 +50,12 @@ fun EmptyFeedView(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val emptyMessage = when (currentFeedFilter) {
-                is FeedFilter.Read -> LocalFeedFlowStrings.current.readArticlesEmptyScreenMessage
-                is FeedFilter.Bookmarks -> LocalFeedFlowStrings.current.bookmarkedArticlesEmptyScreenMessage
-                else -> LocalFeedFlowStrings.current.emptyFeedMessage
+                FeedFilter.Saved,
+                FeedFilter.Bookmarks,
+                -> LocalFeedFlowStrings.current.savedEmptyMessage
+
+                FeedFilter.Voices -> LocalFeedFlowStrings.current.voicesEmptyMessage
+                else -> LocalFeedFlowStrings.current.flowEmptyMessage
             }
 
             Text(
@@ -64,15 +67,15 @@ fun EmptyFeedView(
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            val buttonAction = if (currentFeedFilter is FeedFilter.Read || currentFeedFilter is FeedFilter.Bookmarks) {
+            val buttonAction = if (currentFeedFilter == FeedFilter.Saved || currentFeedFilter is FeedFilter.Bookmarks) {
                 onBackToTimelineClick
             } else {
                 onReloadClick
             }
 
             val buttonText = when (currentFeedFilter) {
-                is FeedFilter.Read, is FeedFilter.Bookmarks -> {
-                    LocalFeedFlowStrings.current.emptyScreenBackToTimeline
+                FeedFilter.Saved, is FeedFilter.Bookmarks -> {
+                    LocalFeedFlowStrings.current.emptyScreenBackToFlow
                 }
                 else -> {
                     LocalFeedFlowStrings.current.refreshFeeds

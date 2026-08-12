@@ -26,7 +26,6 @@ appId: com.prof18.feedflow.debug
 # Open context menu and assert app-owned action set
 - longPressOn:
     id: drawer_feed_source_e2e_feed_android_weekly
-- assertVisible: "Mark all as read"
 - assertVisible: "Open website"
 - assertVisible: "Edit feed"
 - assertVisible: "Change category"
@@ -56,18 +55,6 @@ appId: com.prof18.feedflow.debug
 - tapOn: "Change category"
 - assertVisible: "Categories"
 - back
-
-# Mark all as read clears the unread count for this single feed
-- scrollUntilVisible:
-    element:
-      id: drawer_feed_source_e2e_feed_android_weekly
-    direction: DOWN
-    timeout: 10000
-- longPressOn:
-    id: drawer_feed_source_e2e_feed_android_weekly
-- tapOn: "Mark all as read"
-- assertVisible:
-    id: drawer_feed_source_e2e_feed_android_weekly
 
 # Delete removes the feed source from the drawer
 - longPressOn:

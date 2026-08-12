@@ -144,44 +144,29 @@ fun AndroidDrawer(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                DrawerSectionTitle(LocalFeedFlowStrings.current.drawerTitleLibrary)
+                DrawerSectionTitle(LocalFeedFlowStrings.current.flowTitle)
             }
 
             item {
-                val timelineItem = remember(displayState.navDrawerState.timeline) {
-                    displayState.navDrawerState.timeline
-                        .filterIsInstance<DrawerItem.Timeline>()
-                        .firstOrNull()
-                        ?: DrawerItem.Timeline(unreadCount = 0)
-                }
-
                 DrawerTimelineItem(
                     currentFeedFilter = displayState.currentFeedFilter,
                     onFeedFilterSelected = onFeedFilterSelected,
-                    drawerItem = timelineItem,
                     drawerItemVisualStyle = DefaultDrawerItemVisualStyle,
                 )
             }
 
             item {
-                DrawerReadItem(
-                    currentFeedFilter = displayState.currentFeedFilter,
-                    onFeedFilterSelected = onFeedFilterSelected,
-                    drawerItemVisualStyle = DefaultDrawerItemVisualStyle,
-                )
-            }
-
-            item {
-                val bookmarksItem = remember(displayState.navDrawerState.bookmarks) {
-                    displayState.navDrawerState.bookmarks
-                        .filterIsInstance<DrawerItem.Bookmarks>()
-                        .firstOrNull()
-                        ?: DrawerItem.Bookmarks(unreadCount = 0)
-                }
                 DrawerBookmarksItem(
                     currentFeedFilter = displayState.currentFeedFilter,
                     onFeedFilterSelected = onFeedFilterSelected,
-                    drawerItem = bookmarksItem,
+                    drawerItemVisualStyle = DefaultDrawerItemVisualStyle,
+                )
+            }
+
+            item {
+                DrawerVoicesItem(
+                    currentFeedFilter = displayState.currentFeedFilter,
+                    onFeedFilterSelected = onFeedFilterSelected,
                     drawerItemVisualStyle = DefaultDrawerItemVisualStyle,
                 )
             }
@@ -193,7 +178,7 @@ fun AndroidDrawer(
 
                 item {
                     DrawerReorderableSectionHeader(
-                        title = LocalFeedFlowStrings.current.drawerTitlePinnedFeeds,
+                        title = LocalFeedFlowStrings.current.voicesTitle,
                         showReorderToggle = pinnedFeedSourceItems.size > 1,
                         isEditMode = isPinnedEditMode,
                         reorderToggleTestTag = DrawerE2eIds.PINNED_REORDER_TOGGLE,
@@ -224,7 +209,7 @@ fun AndroidDrawer(
 
                 item {
                     DrawerReorderableSectionHeader(
-                        title = LocalFeedFlowStrings.current.drawerTitleFeedSources,
+                        title = LocalFeedFlowStrings.current.streamsAndVoicesTitle,
                         showReorderToggle = categorySections.size > 1 ||
                             categorySections.any { it.drawerFeedSources.size > 1 },
                         isEditMode = isFeedSourcesEditMode,
@@ -443,8 +428,6 @@ private fun AndroidDrawerCategorySectionContent(
             onEditCategoryClick = feedManagementActions.onEditCategoryClick,
             validateCategoryName = feedManagementActions.validateCategoryName,
             onDeleteCategoryClick = feedManagementActions.onDeleteCategoryClick,
-            onMarkAllReadForFeedSourceClick = feedManagementActions.onMarkAllReadForFeedSourceClick,
-            onMarkAllReadForCategoryClick = feedManagementActions.onMarkAllReadForCategoryClick,
             onDeleteAllFeedsInCategoryByIdClick = feedManagementActions.onDeleteAllFeedsInCategoryByIdClick,
             dragHandle = categoryDragHandle,
             showFeedSources = false,
@@ -552,9 +535,7 @@ private fun AndroidDrawerFeedSourceItem(
         onPinFeedClick = feedManagementActions.onPinFeedClick,
         onChangeFeedCategoryClick = feedManagementActions.onChangeFeedCategoryClick,
         onOpenWebsite = feedManagementActions.onOpenWebsite,
-        onMarkAllReadForFeedSourceClick = feedManagementActions.onMarkAllReadForFeedSourceClick,
         feedSource = feedSourceWrapper.feedSource,
-        unreadCount = feedSourceWrapper.unreadCount,
     )
 }
 

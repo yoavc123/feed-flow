@@ -43,7 +43,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.testTag
@@ -82,7 +81,6 @@ private fun contentSourceToolbarAction(
 fun ReaderModeFloatingToolbar(
     readerModeState: ReaderModeState,
     fontSize: Int,
-    expanded: Boolean,
     canNavigatePrevious: Boolean,
     canNavigateNext: Boolean,
     onNavigateToPrevious: () -> Unit,
@@ -126,7 +124,7 @@ fun ReaderModeFloatingToolbar(
         mutableStateOf(readerModeState.getIsBookmarked)
     }
 
-    val isContentVisible = expanded && readerModeState !is ReaderModeState.Loading
+    val isContentVisible = readerModeState !is ReaderModeState.Loading
 
     // Build action lists regardless of isContentVisible so AnimatedVisibility can animate exit
     // Order: Browser, Share | < > | Bookmark, Comments, Archive, Text Settings, RSS Content
@@ -247,7 +245,6 @@ fun ReaderModeFloatingToolbar(
             ) {
                 IconButton(
                     modifier = Modifier
-                        .focusProperties { canFocus = expanded }
                         .testTag(ReaderModeE2eIds.PREVIOUS_BUTTON),
                     enabled = canNavigatePrevious,
                     onClick = onNavigateToPrevious,
@@ -260,7 +257,6 @@ fun ReaderModeFloatingToolbar(
 
                 IconButton(
                     modifier = Modifier
-                        .focusProperties { canFocus = expanded }
                         .testTag(ReaderModeE2eIds.NEXT_BUTTON),
                     enabled = canNavigateNext,
                     onClick = onNavigateToNext,

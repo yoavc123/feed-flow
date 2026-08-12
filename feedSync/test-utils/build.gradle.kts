@@ -26,12 +26,6 @@ kotlin {
             }
         }
 
-        jvmMain {
-            dependencies {
-                implementation(libs.ktor.client.okhttp)
-            }
-        }
-
         androidMain {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
@@ -40,10 +34,5 @@ kotlin {
             resources.srcDirs("src/commonMain/resources")
         }
 
-        iosMain {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
-        }
     }
 }

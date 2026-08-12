@@ -7,8 +7,6 @@ kotlin {
         namespace = "com.prof18.feedflow.feedsync.dropbox"
     }
 
-    applyDefaultHierarchyTemplate()
-
     sourceSets {
         commonMain {
             dependencies {
@@ -21,27 +19,10 @@ kotlin {
             }
         }
 
-        val commonJvmAndroidMain by creating {
-            dependsOn(commonMain.get())
-
+        androidMain {
             dependencies {
                 implementation(libs.dropbox.core)
-            }
-        }
-
-        androidMain {
-            dependsOn(commonJvmAndroidMain)
-
-            dependencies {
                 api(libs.dropbox.core.android)
-            }
-        }
-
-        jvmMain {
-            dependsOn(commonJvmAndroidMain)
-
-            dependencies {
-                api(libs.dropbox.core)
             }
         }
     }

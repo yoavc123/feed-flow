@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
@@ -23,11 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prof18.feedflow.core.model.DescriptionLineLimit
-import com.prof18.feedflow.core.model.FeedFilter
 import com.prof18.feedflow.core.model.FeedFontSizes
 import com.prof18.feedflow.core.model.FeedItem
 import com.prof18.feedflow.core.model.FeedItemDisplaySettings
@@ -37,37 +34,20 @@ import com.prof18.feedflow.shared.ui.home.components.FeedItemImage
 import com.prof18.feedflow.shared.ui.style.Spacing
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 
-private val ImageCardUnreadDotSize = 9.dp
-private const val ReadTextAlpha = 0.6f
-private const val ReadImageAlpha = 0.76f
-
 @Composable
 internal fun FeedSourceAndUnreadDotRow(
     feedItem: FeedItem,
     feedFontSize: FeedFontSizes,
-    currentFeedFilter: FeedFilter = FeedFilter.Timeline,
-    isHideUnreadDotEnabled: Boolean = false,
     isHideFeedSourceEnabled: Boolean = false,
 ) {
-    val showUnreadDot = !feedItem.isRead && !isHideUnreadDotEnabled
     val showFeedSource = !isHideFeedSourceEnabled
     val showBookmark = feedItem.isBookmarked
 
-    if (!showUnreadDot && !showFeedSource && !showBookmark) return
+    if (!showFeedSource && !showBookmark) return
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (showUnreadDot) {
-            UnreadDot(
-                modifier = Modifier
-                    .padding(
-                        bottom = Spacing.small,
-                        end = Spacing.small,
-                    ),
-            )
-        }
-
         if (showFeedSource) {
             Text(
                 modifier = Modifier
@@ -76,15 +56,7 @@ internal fun FeedSourceAndUnreadDotRow(
                 text = feedItem.feedSource.title,
                 fontSize = feedFontSize.feedMetaFontSize.sp,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(
-                    alpha = if (feedItem.isRead &&
-                        currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks
-                    ) {
-                        0.6f
-                    } else {
-                        1f
-                    },
-                ),
+                color = MaterialTheme.colorScheme.onSurface,
             )
         } else {
             Spacer(modifier = Modifier.weight(1f))
@@ -108,7 +80,6 @@ internal fun TitleSubtitleAndImageRow(
     feedItem: FeedItem,
     feedFontSize: FeedFontSizes,
     modifier: Modifier = Modifier,
-    currentFeedFilter: FeedFilter = FeedFilter.Timeline,
     descriptionLineLimit: DescriptionLineLimit = DescriptionLineLimit.THREE,
 ) {
     Row(
@@ -126,15 +97,7 @@ internal fun TitleSubtitleAndImageRow(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall,
                     lineHeight = (feedFontSize.feedTitleFontSize + 4).sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = if (feedItem.isRead &&
-                            currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks
-                        ) {
-                            0.6f
-                        } else {
-                            1f
-                        },
-                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -153,15 +116,7 @@ internal fun TitleSubtitleAndImageRow(
                     fontSize = feedFontSize.feedDescFontSize.sp,
                     lineHeight = (feedFontSize.feedDescFontSize + 6).sp,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = if (feedItem.isRead &&
-                            currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks
-                        ) {
-                            0.6f
-                        } else {
-                            1f
-                        },
-                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -173,7 +128,6 @@ internal fun TitleSubtitleAndImageRow(
                     .padding(start = Spacing.regular),
                 url = url,
                 width = 96.dp,
-                imageAlpha = feedItem.imageAlpha(currentFeedFilter),
             )
         }
     }
@@ -185,11 +139,9 @@ internal fun FeedItemImageCardContent(
     feedFontSize: FeedFontSizes,
     isGridCell: Boolean,
     heroImageAspectRatio: Float,
-    currentFeedFilter: FeedFilter = FeedFilter.Timeline,
     feedItemDisplaySettings: FeedItemDisplaySettings = FeedItemDisplaySettings(),
 ) {
     val hasSourceRow = feedItem.hasCardSourceRow(
-        isHideUnreadDotEnabled = feedItemDisplaySettings.isHideUnreadDotEnabled,
         isHideFeedSourceEnabled = feedItemDisplaySettings.isHideFeedSourceEnabled,
     )
 
@@ -201,7 +153,6 @@ internal fun FeedItemImageCardContent(
                 modifier = Modifier.testTag(FeedItemE2eIds.image(feedItem.id)),
                 url = url,
                 aspectRatio = heroImageAspectRatio,
-                imageAlpha = feedItem.imageAlpha(currentFeedFilter),
             )
         }
 
@@ -216,8 +167,6 @@ internal fun FeedItemImageCardContent(
             FeedItemCardSourceRow(
                 feedItem = feedItem,
                 feedFontSize = feedFontSize,
-                currentFeedFilter = currentFeedFilter,
-                isHideUnreadDotEnabled = feedItemDisplaySettings.isHideUnreadDotEnabled,
                 isHideFeedSourceEnabled = feedItemDisplaySettings.isHideFeedSourceEnabled,
             )
 
@@ -231,9 +180,7 @@ internal fun FeedItemImageCardContent(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleSmall,
                     lineHeight = (feedFontSize.feedTitleFontSize + 4).sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = feedItem.readAlpha(currentFeedFilter),
-                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -246,9 +193,7 @@ internal fun FeedItemImageCardContent(
                     fontSize = feedFontSize.feedDescFontSize.sp,
                     lineHeight = (feedFontSize.feedDescFontSize + 6).sp,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = feedItem.readAlpha(currentFeedFilter),
-                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -258,9 +203,7 @@ internal fun FeedItemImageCardContent(
                     text = dateString,
                     fontSize = feedFontSize.feedMetaFontSize.sp,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = feedItem.readAlpha(currentFeedFilter),
-                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -268,23 +211,19 @@ internal fun FeedItemImageCardContent(
 }
 
 internal fun FeedItem.hasCardSourceRow(
-    isHideUnreadDotEnabled: Boolean,
     isHideFeedSourceEnabled: Boolean,
-): Boolean = (!isRead && !isHideUnreadDotEnabled) || !isHideFeedSourceEnabled || isBookmarked
+): Boolean = !isHideFeedSourceEnabled || isBookmarked
 
 @Composable
 internal fun FeedItemCardSourceRow(
     feedItem: FeedItem,
     feedFontSize: FeedFontSizes,
-    currentFeedFilter: FeedFilter,
-    isHideUnreadDotEnabled: Boolean,
     isHideFeedSourceEnabled: Boolean,
 ) {
-    val showUnreadDot = !feedItem.isRead && !isHideUnreadDotEnabled
     val showFeedSource = !isHideFeedSourceEnabled
     val showBookmark = feedItem.isBookmarked
 
-    if (!showUnreadDot && !showFeedSource && !showBookmark) return
+    if (!showFeedSource && !showBookmark) return
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -304,9 +243,7 @@ internal fun FeedItemCardSourceRow(
                 fontSize = feedFontSize.feedMetaFontSize.sp,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                    alpha = feedItem.readAlpha(currentFeedFilter),
-                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             Spacer(modifier = Modifier.weight(1f))
@@ -318,14 +255,6 @@ internal fun FeedItemCardSourceRow(
                 tint = MaterialTheme.colorScheme.primary,
                 imageVector = Icons.Filled.Bookmark,
                 contentDescription = LocalFeedFlowStrings.current.articleBookmarkedContentDescription,
-            )
-        }
-
-        if (showUnreadDot) {
-            UnreadDot(
-                modifier = Modifier
-                    .padding(start = Spacing.small),
-                size = ImageCardUnreadDotSize,
             )
         }
     }
@@ -355,31 +284,4 @@ private fun FeedSourceLogo(
             tint = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
-}
-
-private fun FeedItem.readAlpha(currentFeedFilter: FeedFilter): Float =
-    if (isRead && currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks) {
-        ReadTextAlpha
-    } else {
-        1f
-    }
-
-private fun FeedItem.imageAlpha(currentFeedFilter: FeedFilter): Float =
-    if (isRead && currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks) {
-        ReadImageAlpha
-    } else {
-        1f
-    }
-
-@Composable
-private fun UnreadDot(
-    modifier: Modifier = Modifier,
-    size: Dp = 10.dp,
-) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-    )
 }

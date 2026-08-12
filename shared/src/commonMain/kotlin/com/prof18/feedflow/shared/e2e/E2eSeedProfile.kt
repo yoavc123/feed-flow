@@ -40,7 +40,6 @@ enum class E2eSeedAccount(
 ) {
     DROPBOX("dropbox", SyncAccounts.DROPBOX),
     GOOGLE_DRIVE("google_drive", SyncAccounts.GOOGLE_DRIVE),
-    ICLOUD("icloud", SyncAccounts.ICLOUD),
     FRESH_RSS("fresh_rss", SyncAccounts.FRESH_RSS),
     MINIFLUX("miniflux", SyncAccounts.MINIFLUX),
     FEEDBIN("feedbin", SyncAccounts.FEEDBIN),

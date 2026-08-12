@@ -61,7 +61,6 @@ fun HomeFloatingToolbar(
     showDrawerMenu: Boolean,
     isDrawerOpen: Boolean,
     onDrawerMenuClick: () -> Unit,
-    onMarkAllReadClicked: () -> Unit,
     onClearOldArticlesClicked: () -> Unit,
     onClick: () -> Unit,
     onDoubleClick: () -> Unit,
@@ -70,7 +69,7 @@ fun HomeFloatingToolbar(
     onBackupClick: () -> Unit,
     viewMenuState: HomeViewMenuState,
     onFeedOrderChange: (FeedOrder) -> Unit,
-    onShowReadArticlesTimelineChange: (Boolean) -> Unit,
+    onFocusClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -129,10 +128,6 @@ fun HomeFloatingToolbar(
                     Spacer(modifier = Modifier.width(16.dp))
                 }
 
-                val showCount = !displayState.isUnreadCountHidden &&
-                    currentFeedFilter !is FeedFilter.Read &&
-                    currentFeedFilter !is FeedFilter.Bookmarks
-
                 Column(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center,
@@ -144,15 +139,6 @@ fun HomeFloatingToolbar(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-
-                    if (showCount) {
-                        Text(
-                            text = displayState.unReadCount.toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
                 }
             }
         }
@@ -192,7 +178,6 @@ fun HomeFloatingToolbar(
                         showMenu = showMenu,
                         feedFilter = currentFeedFilter,
                         closeMenu = { showMenu = false },
-                        onMarkAllReadClicked = onMarkAllReadClicked,
                         onClearOldArticlesClicked = onClearOldArticlesClicked,
                         onEditFeedClick = { feedSource ->
                             showMenu = false
@@ -204,6 +189,7 @@ fun HomeFloatingToolbar(
                             onBackupClick()
                         },
                         onViewOptionsClick = { showViewOptionsSheet = true },
+                        onFocusClick = onFocusClick,
                     )
                 }
             }
@@ -214,7 +200,6 @@ fun HomeFloatingToolbar(
         HomeViewOptionsBottomSheet(
             state = viewMenuState,
             onFeedOrderChange = onFeedOrderChange,
-            onShowReadArticlesTimelineChange = onShowReadArticlesTimelineChange,
             onDismiss = { showViewOptionsSheet = false },
             sheetState = viewOptionsSheetState,
         )
@@ -243,11 +228,16 @@ internal fun homeFloatingToolbarBorder(): BorderStroke? {
 private fun FeedFilter.getTitle(): String =
     when (this) {
         is FeedFilter.Category -> this.feedCategory.title
+        is FeedFilter.Stream -> this.feedCategory.title
         is FeedFilter.Source -> this.feedSource.title
-        FeedFilter.Timeline -> LocalFeedFlowStrings.current.appName
+        FeedFilter.Timeline -> LocalFeedFlowStrings.current.flowTitle
+        FeedFilter.Flow -> LocalFeedFlowStrings.current.flowTitle
+        FeedFilter.Voices -> LocalFeedFlowStrings.current.voicesTitle
         FeedFilter.Read -> LocalFeedFlowStrings.current.drawerTitleRead
         FeedFilter.Bookmarks -> LocalFeedFlowStrings.current.drawerTitleBookmarks
+        FeedFilter.Saved -> LocalFeedFlowStrings.current.drawerTitleBookmarks
         FeedFilter.Uncategorized -> LocalFeedFlowStrings.current.noCategory
+        FeedFilter.UncategorizedStream -> LocalFeedFlowStrings.current.noCategory
     }
 
 @Composable

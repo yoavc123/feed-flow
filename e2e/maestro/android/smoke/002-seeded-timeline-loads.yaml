@@ -8,3 +8,10 @@ appId: com.prof18.feedflow.debug
 - assertVisible:
     text: "E2E Newest Unread Article.*"
 - assertNotVisible: "E2E Hidden Feed Article"
+- scrollUntilVisible:
+    element:
+      id: article_row_e2e_article_image
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: article_row_e2e_article_image

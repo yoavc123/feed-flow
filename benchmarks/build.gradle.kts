@@ -38,8 +38,7 @@ android {
 }
 
 // The TestedApks configurations resolve the app's dependency graph without Android
-// attributes, so KMP libraries (e.g. compose-webview-multiplatform) would fall back
-// to their desktop variants and fail resolution.
+// attributes, so KMP libraries may resolve a non-Android variant and fail resolution.
 configurations.configureEach {
     if (name.endsWith("TestedApks")) {
         attributes {

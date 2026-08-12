@@ -16,6 +16,28 @@ class ReaderModeHtmlAndCssTest {
     }
 
     @Test
+    fun `reader mode css uses an adaptive wider reading column`() {
+        val css = readerModeCss(colors = null, fontSize = 18, lineHeight = 0)
+
+        assertTrue(css.contains("--reader-column: 880px"))
+        assertTrue(css.contains("--reader-gutter: clamp(18px, 4vw, 48px)"))
+        assertTrue(css.contains("margin: 0"))
+        assertTrue(!css.contains("max-width: 700px"))
+    }
+
+    @Test
+    fun `reader mode css preserves image aspect ratios`() {
+        val css = readerModeCss(colors = null, fontSize = 18, lineHeight = 0)
+        val heroCss = css.substringAfter(".__hero {").substringBefore("}")
+
+        assertTrue(css.contains("height: auto !important"))
+        assertTrue(css.contains("object-fit: contain"))
+        assertTrue(css.contains("max-height: none"))
+        assertTrue(!heroCss.contains("object-fit: cover"))
+        assertTrue(!heroCss.contains("height: 50vw"))
+    }
+
+    @Test
     fun `reader mode html marks failed images as hidden`() {
         val html = getReaderModeStyledHtml(
             colors = null,
@@ -27,6 +49,23 @@ class ReaderModeHtmlAndCssTest {
         assertTrue(html.contains("image.complete && image.naturalWidth === 0"))
         assertTrue(html.contains("__feedflow_image_load_failed"))
         assertTrue(html.contains("aria-hidden"))
+    }
+
+    @Test
+    fun `reader mode html hydrates lazy images and hides tracking pixels`() {
+        val html = getReaderModeStyledHtml(
+            colors = null,
+            content = "<picture><source data-srcset=\"https://example.com/image.webp\" />" +
+                "<img data-src=\"https://example.com/image.jpg\" /></picture>",
+            fontSize = 18,
+        )
+
+        assertTrue(html.contains("data-lazy-srcset"))
+        assertTrue(html.contains("image.setAttribute(\"src\", lazySource)"))
+        assertTrue(html.contains("__feedflow_tracking_image"))
+        assertTrue(html.contains("__feedflow_content_image"))
+        assertTrue(html.contains("viewport-fit=cover"))
+        assertTrue(!html.contains("user-scalable=no"))
     }
 
     @Test

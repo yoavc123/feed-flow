@@ -1,6 +1,7 @@
 package com.prof18.feedflow.shared.ui.home
 
 import androidx.compose.runtime.Stable
+import com.prof18.feedflow.core.model.CalmCoachingCard
 import com.prof18.feedflow.core.model.CategoryId
 import com.prof18.feedflow.core.model.CategoryName
 import com.prof18.feedflow.core.model.CategoryNameValidationResult
@@ -20,13 +21,13 @@ import com.prof18.feedflow.core.model.NavDrawerState
 import com.prof18.feedflow.core.model.SwipeActions
 import com.prof18.feedflow.core.model.VisibleFeedItem
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Stable
 data class HomeDisplayState(
     val feedItems: ImmutableList<FeedItem>,
+    val pinnedFeedItems: ImmutableList<FeedItem> = persistentListOf(),
     val navDrawerState: NavDrawerState,
-    val unReadCount: Long,
-    val isUnreadCountHidden: Boolean,
     val feedUpdateStatus: FeedUpdateStatus,
     val feedFontSizes: FeedFontSizes,
     val currentFeedFilter: FeedFilter,
@@ -36,6 +37,7 @@ data class HomeDisplayState(
     val isGridLayoutEnabled: Boolean,
     val isSyncUploadRequired: Boolean = false,
     val feedItemDisplaySettings: FeedItemDisplaySettings = FeedItemDisplaySettings(),
+    val coachingCards: ImmutableList<CalmCoachingCard> = persistentListOf(),
 )
 
 @Stable
@@ -53,7 +55,6 @@ data class FeedListActions(
     val onDeleteDatabaseClick: () -> Unit,
     val refreshData: () -> Unit,
     val requestNewData: () -> Unit,
-    val markAllRead: () -> Unit,
     val onBackToTimelineClick: () -> Unit,
     val onVisibleFeedItemsChanged: (List<VisibleFeedItem>) -> Unit,
     val markAsRead: (FeedItemId) -> Unit,
@@ -61,6 +62,7 @@ data class FeedListActions(
     val openInBrowser: (FeedItemUrlInfo) -> Unit,
     val updateBookmarkStatus: (FeedItemId, Boolean) -> Unit,
     val updateReadStatus: (FeedItemId, Boolean) -> Unit,
+    val letGo: (FeedItemId) -> Unit,
     val markAllAboveAsRead: (String) -> Unit,
     val markAllBelowAsRead: (String) -> Unit,
     val onNavigateNext: () -> Unit = {},
@@ -84,8 +86,6 @@ data class FeedManagementActions(
     val onReorderFeedSources: (List<FeedSource>) -> Unit = { _ -> },
     val onDeleteAllFeedsInCategoryClick: (List<FeedSource>) -> Unit = { _ -> },
     val onDeleteAllFeedsInCategoryByIdClick: (CategoryId) -> Unit = { _ -> },
-    val onMarkAllReadForFeedSourceClick: (FeedSource) -> Unit = { _ -> },
-    val onMarkAllReadForCategoryClick: (FeedSourceCategory) -> Unit = { _ -> },
 )
 
 @Stable

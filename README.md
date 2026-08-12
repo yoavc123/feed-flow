@@ -3,12 +3,11 @@
   <h1>FeedFlow</h1>
   <p><strong>Minimal, fast RSS reading without the clutter.</strong></p>
   <p>
-    FeedFlow is an RSS reader project with apps for Android, iOS, macOS, Windows, and Linux.
-    It uses Kotlin Multiplatform for shared logic, Compose Multiplatform for Android and Desktop,
-    and SwiftUI for iOS-specific UI.
+    FeedFlow is a calm RSS reader for Android phones, tablets, and foldables.
+    It uses an Android-only Kotlin Multiplatform build and Compose UI.
   </p>
   <p>
-    It focuses on a clean timeline, flexible reading modes, and control over sync and storage.
+    It focuses on a time-bounded Flow, flexible reading modes, and control over sync and storage.
   </p>
   <p>
     <a href="https://www.feedflow.dev">Website</a>
@@ -22,7 +21,7 @@
   <p>
     <img alt="GitHub Release" src="https://img.shields.io/github/v/release/prof18/feed-flow?display_name=release">
     <img alt="License" src="https://img.shields.io/github/license/prof18/feed-flow">
-    <img alt="Platforms" src="https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux-2ea44f">
+    <img alt="Platform" src="https://img.shields.io/badge/platform-Android-2ea44f">
   </p>
 </div>
 
@@ -37,25 +36,22 @@
 
 ## Highlights
 
-- Dedicated apps for Android, iOS, macOS, Windows, and Linux
+- A time-bounded Flow with Flash, Daily, Standard, Slow, and Timeless paces
+- Local-only Let Go with undo, without mutating remote read state
 - Flexible reading modes: Reader Mode, the in-app browser, or your preferred browser
-- Flexible sync and storage options: local library, Dropbox, Google Drive, iCloud, FreshRSS, Miniflux, Feedbin, and BazQux Reader
+- Flexible sync and storage options: local library, Dropbox, Google Drive, FreshRSS, Miniflux, Feedbin, and BazQux Reader
 - Offline reading by saving article content during sync
-- Timeline, read status, bookmark, source, and category filters
+- Flow, Saved, source, and stream views
 - Blocked words to hide articles containing specific keywords or phrases
 - Curated feed suggestions across different topics
 - Theme modes for system, light, dark, and OLED
-- Widgets for Android and iOS
+- Android home-screen widgets
 
 ## Download
 
 | Platform | Get FeedFlow |
 | --- | --- |
 | Android | [Google Play](https://play.google.com/store/apps/details?id=com.prof18.feedflow) or [F-Droid](https://f-droid.org/packages/com.prof18.feedflow) |
-| iPhone and iPad | [App Store](https://apps.apple.com/us/app/feedflow-rss-reader/id6447210518) |
-| macOS | [Mac App Store](https://apps.apple.com/us/app/feedflow-rss-reader/id6447210518), [Homebrew](https://formulae.brew.sh/cask/feedflow), or [GitHub Releases](https://github.com/prof18/feed-flow/releases/latest) |
-| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N5T1RFBB6V5?mode=direct) or [GitHub Releases](https://github.com/prof18/feed-flow/releases/latest) |
-| Linux | [Flathub](https://flathub.org/en/apps/com.prof18.feedflow) or [GitHub Releases](https://github.com/prof18/feed-flow/releases/latest) |
 
 ## What You Can Do With FeedFlow
 
@@ -67,12 +63,12 @@ and sharing articles without leaving your reading flow.
 
 ### Keep Control Over Sync and Storage
 
-You can keep everything local, use storage backends like Dropbox, Google Drive, or iCloud,
+You can keep everything local, use storage backends like Dropbox or Google Drive,
 or connect directly to reader services such as FreshRSS, Miniflux, Feedbin, and BazQux Reader.
 
-### Stay on Top of a Busy Timeline
+### Let a Busy Flow Move On
 
-Use bookmarks, read and unread states, timeline filters, source and category views, and blocked words.
+Choose how quickly articles leave your Flow, save what matters, and Let Go of the rest without creating unread debt.
 FeedFlow also supports auto-saving article content for offline reading and includes cache cleanup tools.
 
 ### Discover New Feeds Faster
@@ -91,38 +87,14 @@ cp config/dummy-google-services.json androidApp/src/debug/google-services.json
 cp config/dummy-google-services.json androidApp/src/release/google-services.json
 ```
 
-iOS:
-
-```bash
-cp config/dummy-google-service.plist iosApp/GoogleService-Info-dev.plist
-cp config/dummy-google-service.plist iosApp/GoogleService-Info.plist
-cp config/dummy-config.xcconfig iosApp/Assets/Config.xcconfig
-brew install xcodegen
-cd iosApp && ./.scripts/generate-project.sh
-```
-
-If you want to test real iOS sync providers locally, start from `iosApp/Assets/Config.xcconfig.template`
-instead of the dummy config and fill in your own keys.
-
-The iOS Xcode project is generated from `iosApp/project.yml` and is not committed.
-The generation script also creates the ignored `iosApp/Assets/Config-Debug.xcconfig`
-from its tracked template when it is missing.
-
-Regenerate the project whenever `iosApp/project.yml`, iOS source structure, xcconfig files,
-entitlements, or SwiftPM dependencies change.
-
 Optional local keys:
 
-- `keystore.properties` for Android/Desktop Dropbox keys
-- `desktopApp/src/jvmMain/resources/props.properties` for Desktop Dropbox keys
-- `iosApp/Assets/Config.xcconfig` for iOS Google Drive and Dropbox config
-- `iosApp/Assets/Config-Debug.xcconfig` for iOS debug Google Drive overrides
+- `keystore.properties` for the Android Dropbox key
 
 ## Tech Stack
 
 - Kotlin Multiplatform for shared business logic
-- Compose Multiplatform for Android and Desktop UI
-- SwiftUI for iOS-specific UI
+- Compose Multiplatform for Android UI
 - SQLDelight-backed local storage
 - [RSSParser](https://github.com/prof18/RSS-Parser) for feed parsing
 

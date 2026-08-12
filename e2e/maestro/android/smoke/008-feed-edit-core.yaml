@@ -35,6 +35,12 @@ appId: com.prof18.feedflow.debug
     id: edit_feed_pinned_toggle
 - scrollUntilVisible:
     element:
+      text: "Source pace"
+    direction: DOWN
+- tapOn: "Source pace"
+- tapOn: "Flash.*3 hours"
+- scrollUntilVisible:
+    element:
       id: edit_feed_category_selector
     direction: DOWN
 - tapOn:

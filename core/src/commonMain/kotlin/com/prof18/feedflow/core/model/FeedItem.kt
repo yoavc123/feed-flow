@@ -18,4 +18,10 @@ data class FeedItem(
     val commentsUrl: String?,
     val isBookmarked: Boolean,
     val contentDirection: ContentDirection? = null,
+    val author: String? = null,
+    val freshnessTimestampMillis: Long? = pubDateMillis,
+    val freshness: Float = 1f,
+    val releaseState: ReleaseState = ReleaseState.ACTIVE,
+    val readingProgress: ReadingProgress? = null,
+    val isSavedOffline: Boolean = false,
 )

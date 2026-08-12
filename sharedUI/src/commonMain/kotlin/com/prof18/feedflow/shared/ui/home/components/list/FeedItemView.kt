@@ -23,7 +23,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.prof18.feedflow.core.model.FeedFilter
 import com.prof18.feedflow.core.model.FeedFontSizes
 import com.prof18.feedflow.core.model.FeedItem
 import com.prof18.feedflow.core.model.FeedItemDisplaySettings
@@ -32,6 +31,7 @@ import com.prof18.feedflow.core.model.FeedItemUrlInfo
 import com.prof18.feedflow.core.model.FeedItemUrlTitle
 import com.prof18.feedflow.core.model.FeedLayout
 import com.prof18.feedflow.core.model.FeedSource
+import com.prof18.feedflow.core.model.SourcePresentation
 import com.prof18.feedflow.core.utils.ContentDirection
 import com.prof18.feedflow.shared.ui.feedsourcelist.singleAndLongClickModifier
 import com.prof18.feedflow.shared.ui.preview.feedItemsForPreview
@@ -39,6 +39,7 @@ import com.prof18.feedflow.shared.ui.style.Spacing
 import com.prof18.feedflow.shared.ui.utils.PreviewHelper
 
 private const val DefaultHeroImageAspectRatio = 16f / 9f
+private const val WebComicHeroImageAspectRatio = 4f / 5f
 
 @Composable
 internal fun FeedItemView(
@@ -56,10 +57,10 @@ internal fun FeedItemView(
     onShareClick: (FeedItemUrlTitle) -> Unit,
     onMarkAllAboveAsRead: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onLetGo: ((FeedItemId) -> Unit)? = null,
     disableClick: Boolean = false,
     isGridCell: Boolean = false,
     heroImageAspectRatio: Float = DefaultHeroImageAspectRatio,
-    currentFeedFilter: FeedFilter = FeedFilter.Timeline,
     feedItemDisplaySettings: FeedItemDisplaySettings = FeedItemDisplaySettings(),
     onMarkAllBelowAsRead: (String) -> Unit,
 ) {
@@ -101,7 +102,13 @@ internal fun FeedItemView(
 
     val contentLayoutDirection = contentLayoutDirection(feedItem)
 
-    val normalizedFeedLayout = if (feedLayout == FeedLayout.GRID) FeedLayout.BIG_IMAGE else feedLayout
+    val isWebComic = feedItem.feedSource.sourcePresentation == SourcePresentation.WEB_COMIC &&
+        feedItem.imageUrl != null
+    val normalizedFeedLayout = when {
+        isWebComic -> FeedLayout.BIG_IMAGE
+        feedLayout == FeedLayout.GRID -> FeedLayout.BIG_IMAGE
+        else -> feedLayout
+    }
     if (normalizedFeedLayout == FeedLayout.BIG_IMAGE) {
         Column(modifier = modifier) {
             Column(
@@ -113,8 +120,7 @@ internal fun FeedItemView(
                         feedItem = feedItem,
                         feedFontSize = feedFontSize,
                         isGridCell = isGridCell,
-                        heroImageAspectRatio = heroImageAspectRatio,
-                        currentFeedFilter = currentFeedFilter,
+                        heroImageAspectRatio = if (isWebComic) WebComicHeroImageAspectRatio else heroImageAspectRatio,
                         feedItemDisplaySettings = feedItemDisplaySettings,
                     )
                 }
@@ -131,6 +137,7 @@ internal fun FeedItemView(
                     shareCommentsMenuLabel = shareCommentsMenuLabel,
                     onBookmarkClick = onBookmarkClick,
                     onReadStatusClick = onReadStatusClick,
+                    onLetGo = onLetGo,
                     onCommentClick = onCommentClick,
                     onShareClick = onShareClick,
                     onOpenFeedSettings = onOpenFeedSettings,
@@ -157,8 +164,6 @@ internal fun FeedItemView(
                 FeedSourceAndUnreadDotRow(
                     feedItem = feedItem,
                     feedFontSize = feedFontSize,
-                    currentFeedFilter = currentFeedFilter,
-                    isHideUnreadDotEnabled = feedItemDisplaySettings.isHideUnreadDotEnabled,
                     isHideFeedSourceEnabled = feedItemDisplaySettings.isHideFeedSourceEnabled,
                 )
 
@@ -168,7 +173,6 @@ internal fun FeedItemView(
                         .fillMaxWidth(),
                     feedItem = feedItem,
                     feedFontSize = feedFontSize,
-                    currentFeedFilter = currentFeedFilter,
                     descriptionLineLimit = feedItemDisplaySettings.descriptionLineLimit,
                 )
 
@@ -183,13 +187,7 @@ internal fun FeedItemView(
                         fontSize = feedFontSize.feedMetaFontSize.sp,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = if (feedItem.isRead &&
-                                currentFeedFilter !is FeedFilter.Read && currentFeedFilter !is FeedFilter.Bookmarks
-                            ) {
-                                0.6f
-                            } else {
-                                1f
-                            },
+                            alpha = 1f,
                         ),
                     )
                 }
@@ -207,6 +205,7 @@ internal fun FeedItemView(
                 shareCommentsMenuLabel = shareCommentsMenuLabel,
                 onBookmarkClick = onBookmarkClick,
                 onReadStatusClick = onReadStatusClick,
+                onLetGo = onLetGo,
                 onCommentClick = onCommentClick,
                 onShareClick = onShareClick,
                 onOpenFeedSettings = onOpenFeedSettings,
@@ -251,6 +250,7 @@ internal fun FeedItemListViewPreview() {
             onFeedItemClick = {},
             onBookmarkClick = { _, _ -> },
             onReadStatusClick = { _, _ -> },
+            onLetGo = {},
             onCommentClick = {},
             onShareClick = {},
             onOpenFeedSettings = {},

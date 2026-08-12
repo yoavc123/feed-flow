@@ -12,6 +12,9 @@ VALUES (?, ?);
 isItemDeleted:
 SELECT EXISTS(SELECT 1 FROM deleted_feed_items WHERE url_hash = ?);
 
+restoreDeletedFeedItem:
+DELETE FROM deleted_feed_items WHERE url_hash = ?;
+
 cleanupOldDeletedItems:
 DELETE FROM deleted_feed_items
 WHERE deleted_at < :threshold;

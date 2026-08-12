@@ -10,6 +10,7 @@ import com.prof18.feedflow.core.model.FeedSource
 import com.prof18.feedflow.core.model.FeedSourceCategory
 import com.prof18.feedflow.core.model.FeedSyncError
 import com.prof18.feedflow.core.model.ParsedFeedSource
+import com.prof18.feedflow.core.model.ReadingHistoryItem
 import com.prof18.feedflow.core.model.SearchFilter
 import com.prof18.feedflow.core.model.SearchState
 import com.prof18.feedflow.database.DatabaseHelper
@@ -32,6 +33,34 @@ import kotlin.time.Duration.Companion.milliseconds
 import com.prof18.feedflow.core.model.DatabaseError as DatabaseErrorCode
 
 class SearchViewModelTest : KoinTestBase() {
+
+    @Test
+    fun `history search covers author source summary and local text`() = runTest(testDispatcher) {
+        val viewModel = getViewModel()
+        val databaseHelper = getDatabaseHelper()
+        databaseHelper.upsertReadingHistory(
+            ReadingHistoryItem(
+                feedItemId = "history-item",
+                url = "https://example.com/history",
+                title = "A quiet title",
+                summary = "Summary about gardens",
+                author = "Ada Author",
+                feedSourceId = "source-history",
+                feedSourceTitle = "Calm Source",
+                articleText = "Locally retained telescope notes",
+                openedAtMillis = 1_000,
+            ),
+        )
+        viewModel.updateSearchFilter(SearchFilter.History)
+
+        listOf("Ada", "Calm", "gardens", "telescope").forEach { query ->
+            viewModel.updateSearchQuery(query)
+            advanceTimeBy(500.milliseconds)
+            advanceUntilIdle()
+            val state = assertIs<SearchState.HistoryFound>(viewModel.searchState.value)
+            assertEquals("history-item", state.items.single().feedItemId)
+        }
+    }
 
     @Test
     fun `initial state uses timeline defaults`() = runTest(testDispatcher) {
@@ -275,21 +304,21 @@ class SearchViewModelTest : KoinTestBase() {
             id = "item-read",
             title = "Filter Match",
             feedSource = feedSource,
-            pubDateMillis = 3000,
+            pubDateMillis = 99_000,
             isRead = true,
         )
         val bookmarkedItem = createFeedItem(
             id = "item-bookmarked",
             title = "Filter Match",
             feedSource = feedSource,
-            pubDateMillis = 2000,
+            pubDateMillis = 98_000,
             isBookmarked = true,
         )
         val otherItem = createFeedItem(
             id = "item-other",
             title = "Filter Match",
             feedSource = feedSource,
-            pubDateMillis = 1000,
+            pubDateMillis = 97_000,
         )
         databaseHelper.insertFeedItems(listOf(readItem, bookmarkedItem, otherItem), lastSyncTimestamp = 0)
         databaseHelper.updateReadStatus(FeedItemId(readItem.id), true)
@@ -382,7 +411,7 @@ class SearchViewModelTest : KoinTestBase() {
             id = "reset-item-updated",
             title = "Reset Match Updated",
             feedSource = feedSource,
-            pubDateMillis = 3000,
+            pubDateMillis = 99_000,
         )
         databaseHelper.insertFeedItems(listOf(updatedItem), lastSyncTimestamp = 0)
         advanceUntilIdle()
@@ -416,6 +445,7 @@ class SearchViewModelTest : KoinTestBase() {
             pageSize = 10,
             showReadItems = true,
             sortOrder = FeedOrder.NEWEST_FIRST,
+            currentTimeMillis = 100_000,
         )
         val dbItem = dbItems.first { it.url_hash == item.id }
         assertEquals(true, dbItem.is_bookmarked)
@@ -441,13 +471,13 @@ class SearchViewModelTest : KoinTestBase() {
             id = "above-2",
             title = "Mark Above",
             feedSource = feedSource,
-            pubDateMillis = 2000,
+            pubDateMillis = 98_000,
         )
         val item3 = createFeedItem(
             id = "above-3",
             title = "Mark Above",
             feedSource = feedSource,
-            pubDateMillis = 1000,
+            pubDateMillis = 97_000,
         )
         databaseHelper.insertFeedItems(listOf(item1, item2, item3), lastSyncTimestamp = 0)
         databaseHelper.updateReadStatus(FeedItemId(item1.id), true)
@@ -464,6 +494,7 @@ class SearchViewModelTest : KoinTestBase() {
             pageSize = 10,
             showReadItems = true,
             sortOrder = FeedOrder.NEWEST_FIRST,
+            currentTimeMillis = 100_000,
         )
         val itemsById = dbItems.associateBy { it.url_hash }
         assertEquals(true, itemsById.getValue(item1.id).is_read)
@@ -483,19 +514,19 @@ class SearchViewModelTest : KoinTestBase() {
             id = "below-1",
             title = "Mark Below",
             feedSource = feedSource,
-            pubDateMillis = 3000,
+            pubDateMillis = 99_000,
         )
         val item2 = createFeedItem(
             id = "below-2",
             title = "Mark Below",
             feedSource = feedSource,
-            pubDateMillis = 2000,
+            pubDateMillis = 98_000,
         )
         val item3 = createFeedItem(
             id = "below-3",
             title = "Mark Below",
             feedSource = feedSource,
-            pubDateMillis = 1000,
+            pubDateMillis = 97_000,
         )
         databaseHelper.insertFeedItems(listOf(item1, item2, item3), lastSyncTimestamp = 0)
         viewModel.updateSearchQuery("Mark")
@@ -511,6 +542,7 @@ class SearchViewModelTest : KoinTestBase() {
             pageSize = 10,
             showReadItems = true,
             sortOrder = FeedOrder.NEWEST_FIRST,
+            currentTimeMillis = 100_000,
         )
         val itemsById = dbItems.associateBy { it.url_hash }
         assertEquals(false, itemsById.getValue(item1.id).is_read)

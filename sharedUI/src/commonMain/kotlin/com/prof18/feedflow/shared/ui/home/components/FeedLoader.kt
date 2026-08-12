@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.prof18.feedflow.core.model.FeedUpdateStatus
+import com.prof18.feedflow.shared.ui.style.FeedFlowMotion
 import com.prof18.feedflow.shared.ui.style.Spacing
 import com.prof18.feedflow.shared.ui.utils.ConditionalAnimatedVisibility
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
@@ -25,13 +26,13 @@ fun FeedLoader(
 ) {
     ConditionalAnimatedVisibility(
         visible = loadingState.isLoading(),
-        enter = fadeIn(animationSpec = tween(durationMillis = 350)) +
+        enter = fadeIn(animationSpec = tween(durationMillis = FeedFlowMotion.SETTLE)) +
             slideInVertically(
-                animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                animationSpec = tween(durationMillis = FeedFlowMotion.SETTLE, easing = FastOutSlowInEasing),
             ) { -it / 2 },
-        exit = fadeOut(animationSpec = tween(durationMillis = 350)) +
+        exit = fadeOut(animationSpec = tween(durationMillis = FeedFlowMotion.SETTLE)) +
             slideOutVertically(
-                animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                animationSpec = tween(durationMillis = FeedFlowMotion.SETTLE, easing = FastOutSlowInEasing),
             ) { -it / 2 },
     ) {
         val feedRefreshCounter = if (loadingState.refreshedFeedCount > 0 && loadingState.totalFeedCount > 0) {

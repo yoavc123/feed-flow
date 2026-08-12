@@ -21,9 +21,10 @@ internal fun AppearanceScreen(
         navigateBack = navigateBack,
         themeMode = settingsState.themeMode,
         isReduceMotionEnabled = extrasState.isReduceMotionEnabled,
-        isHideUnreadCountEnabled = settingsState.isHideUnreadCountEnabled,
+        areCalmInsightsEnabled = extrasState.areCalmInsightsEnabled,
         onThemeModeSelected = mainSettingsViewModel::updateThemeMode,
         onReduceMotionToggled = extrasSettingsViewModel::updateReduceMotionEnabled,
-        onHideUnreadCountToggled = mainSettingsViewModel::updateHideUnreadCount,
+        onCalmInsightsToggled = extrasSettingsViewModel::updateCalmInsightsEnabled,
+        onClearReadingHistory = extrasSettingsViewModel::clearLocalReadingHistory,
     )
 }

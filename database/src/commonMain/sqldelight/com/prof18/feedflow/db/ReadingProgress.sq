@@ -1,0 +1,18 @@
+CREATE TABLE reading_progress (
+    feed_item_id TEXT NOT NULL PRIMARY KEY,
+    progress REAL NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+upsertReadingProgress:
+INSERT OR REPLACE INTO reading_progress(feed_item_id, progress, updated_at)
+VALUES (?, ?, ?);
+
+getReadingProgress:
+SELECT * FROM reading_progress WHERE feed_item_id = ?;
+
+deleteReadingProgress:
+DELETE FROM reading_progress WHERE feed_item_id = ?;
+
+deleteAllReadingProgress:
+DELETE FROM reading_progress;

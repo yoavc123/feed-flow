@@ -46,7 +46,7 @@ fun AdaptiveHomeView(
     shareBehavior: ShareBehavior,
     viewMenuState: HomeViewMenuState,
     onFeedOrderChange: (FeedOrder) -> Unit,
-    onShowReadArticlesTimelineChange: (Boolean) -> Unit,
+    onFocusClick: () -> Unit,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
     useDockedDrawer: Boolean = false,
@@ -85,7 +85,7 @@ fun AdaptiveHomeView(
             onNavigateToNextFeed = onNavigateToNextFeed,
             viewMenuState = viewMenuState,
             onFeedOrderChange = onFeedOrderChange,
-            onShowReadArticlesTimelineChange = onShowReadArticlesTimelineChange,
+            onFocusClick = onFocusClick,
         )
     }
 

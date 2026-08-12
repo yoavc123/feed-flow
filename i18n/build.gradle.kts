@@ -10,25 +10,17 @@ kotlin {
         namespace = "com.prof18.feedflow.i18n"
     }
 
-    applyDefaultHierarchyTemplate()
+    sourceSets.commonMain {
+        kotlin.srcDir("build/generated/ksp/android/androidMain/kotlin")
+    }
 
-    sourceSets {
-        val commonJvmAndroidMain by creating {
-            dependsOn(commonMain.get())
-        }
-
-        androidMain {
-            dependsOn(commonJvmAndroidMain)
-        }
-
-        jvmMain {
-            dependsOn(commonJvmAndroidMain)
-        }
+    sourceSets.androidMain {
+        kotlin.exclude("**/*FeedFlowStrings.kt")
     }
 }
 
 dependencies {
-    add("kspCommonMainMetadata", libs.lyricist.processorXml)
+    add("kspAndroid", libs.lyricist.processorXml)
 }
 
 ksp {
@@ -40,11 +32,7 @@ ksp {
 }
 
 tasks.withType<KotlinCompilationTask<*>>().all {
-    if (name != "kspCommonMainKotlinMetadata") {
-        dependsOn("kspCommonMainKotlinMetadata")
+    if (name != "kspAndroidMain") {
+        dependsOn("kspAndroidMain")
     }
-}
-
-kotlin.sourceSets.commonMain {
-    kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
 }

@@ -43,7 +43,7 @@ fun getReaderModeStyledHtml(
     return """
     <html lang="en" dir='auto'>
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <style>
       ${readerModeCss(colors, fontSize, lineHeight)}
     </style>
@@ -74,18 +74,58 @@ fun getReaderModeStyledHtml(
                 });
             }
 
-          function hideBrokenImage(image) {
-              image.classList.add("__feedflow_image_load_failed");
+          function hideImage(image, className) {
+              image.classList.add(className);
               image.setAttribute("aria-hidden", "true");
           }
 
+          function firstImageAttribute(element, names) {
+              for (var index = 0; index < names.length; index++) {
+                  var value = element.getAttribute(names[index]);
+                  if (value) return value;
+              }
+              return "";
+          }
+
+          document.querySelectorAll("picture source").forEach(function(source) {
+              var lazySourceSet = firstImageAttribute(source, ["data-srcset", "data-lazy-srcset"]);
+              if (lazySourceSet) source.setAttribute("srcset", lazySourceSet);
+          });
+
           document.querySelectorAll("img").forEach(function(image) {
+              var lazySource = firstImageAttribute(
+                  image,
+                  ["data-src", "data-lazy-src", "data-original", "data-original-src", "data-cfsrc"]
+              );
+              var lazySourceSet = firstImageAttribute(image, ["data-srcset", "data-lazy-srcset"]);
+              if (lazySource) image.setAttribute("src", lazySource);
+              if (lazySourceSet) image.setAttribute("srcset", lazySourceSet);
+              image.setAttribute("decoding", "async");
+
+              function normalizeLoadedImage() {
+                  var declaredWidth = parseInt(image.getAttribute("width") || "0", 10);
+                  var declaredHeight = parseInt(image.getAttribute("height") || "0", 10);
+                  var actualWidth = image.naturalWidth || declaredWidth;
+                  var actualHeight = image.naturalHeight || declaredHeight;
+                  var isTrackingImage = actualWidth > 0 && actualHeight > 0 &&
+                      actualWidth <= 2 && actualHeight <= 2;
+
+                  if (isTrackingImage) {
+                      hideImage(image, "__feedflow_tracking_image");
+                  } else if (image.classList.contains("__hero") || actualWidth >= 240 || actualHeight >= 240) {
+                      image.classList.add("__feedflow_content_image");
+                  }
+              }
+
+              image.addEventListener("load", normalizeLoadedImage);
               image.addEventListener("error", function() {
-                  hideBrokenImage(image);
+                  hideImage(image, "__feedflow_image_load_failed");
               });
 
               if (image.complete && image.naturalWidth === 0) {
-                  hideBrokenImage(image);
+                  hideImage(image, "__feedflow_image_load_failed");
+              } else if (image.complete) {
+                  normalizeLoadedImage();
               }
           });
 
@@ -178,91 +218,170 @@ internal fun readerModeCss(colors: ReaderColors?, fontSize: Int, lineHeight: Int
     --reader-link: $linkColor;
     --reader-bg: $backgroundColor;
     --reader-border: $borderColor;
+    --reader-column: 880px;
+    --reader-gutter: clamp(18px, 4vw, 48px);
+}
+
+* {
+    box-sizing: border-box;
 }
 
 html {
     overflow-x: hidden;
+    background: var(--reader-bg);
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
+    margin: 0;
     overflow-x: hidden;
     overflow-wrap: break-word;
     font: -apple-system-body;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: $fontSizeCss;
     line-height: $lineHeightCss;
-    padding-bottom: 112px;
+    padding: 0 0 128px;
     color: var(--reader-text);
+    background: var(--reader-bg);
 }
 
-.__hero {
-    display: block;
+#container {
     width: 100%;
-    height: 50vw;
-    max-height: 300px;
-    object-fit: cover;
-    overflow: hidden;
-    border-radius: 7px;
+}
+
+body > h1,
+#__content {
+    width: 100%;
+    max-width: calc(var(--reader-column) + var(--reader-gutter) + var(--reader-gutter));
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--reader-gutter);
+    padding-right: var(--reader-gutter);
+}
+
+body > h1 {
+    margin-top: 0;
+    margin-bottom: 0.55em;
+    font-size: clamp(1.9em, 7vw, 2.75em);
+    letter-spacing: -0.025em;
 }
 
 #__content {
     line-height: $lineHeightCss;
     overflow-x: hidden;
+    padding-bottom: 32px;
 }
 
-@media screen and (min-width: 650px) {
-    #__content {  line-height: $lineHeightCss; }
+#__content > :first-child {
+    margin-top: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    line-height: 1.2;
+    line-height: 1.22;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    font-weight: 800;
+    font-weight: 750;
+    overflow-wrap: anywhere;
 }
 
-body > h1 {
-    padding: 0 16px;
-    margin: 16px auto;
-    max-width: 700px;
+h1 {
+    font-size: 1.85em;
 }
 
-img, iframe, object, video {
-    max-width: 100%;
-    height: auto;
-    border-radius: 7px;
+h2 {
+    margin-top: 1.65em;
+    font-size: 1.45em;
 }
 
-img.__feedflow_image_load_failed {
+h3 {
+    margin-top: 1.5em;
+    font-size: 1.2em;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 1.1em;
+}
+
+ul, ol {
+    padding-inline-start: 1.5em;
+}
+
+li + li {
+    margin-top: 0.35em;
+}
+
+img, svg, picture, iframe, object, video {
+    max-width: 100% !important;
+}
+
+img {
+    height: auto !important;
+}
+
+.__hero {
+    display: block;
+    width: 100%;
+    height: auto !important;
+    max-height: none;
+    margin: 1.25em auto 1.5em;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+img.__feedflow_content_image {
+    display: block;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    margin: 1.25em auto;
+    float: none !important;
+    object-fit: contain;
+    border-radius: 10px;
+    cursor: zoom-in;
+}
+
+img.__feedflow_image_load_failed,
+img.__feedflow_tracking_image,
+img[width="1"][height="1"] {
     display: none !important;
 }
 
 pre {
     max-width: 100%;
     overflow-x: auto;
+    white-space: pre;
     background-color: var(--reader-bg);
     border: 1px solid var(--reader-border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin: 16px 0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 1.25em 0;
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
     line-height: 1.4286;
-    font-size: $fontSizeCss;
+    font-size: 0.9em;
 }
 
 table {
     display: block;
+    width: max-content;
+    min-width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    border-collapse: collapse;
+    margin: 1.25em 0;
+}
+
+th, td {
+    padding: 0.65em 0.8em;
+    border-bottom: 1px solid var(--reader-border);
+    text-align: start;
 }
 
 blockquote {
     margin: 1.5em 0;
-    padding: 1em 1.5em;
-    border-left: 4px solid var(--reader-border);
-    background-color: var(--reader-bg);
-    border-radius: 0 6px 6px 0;
+    padding: 0.25em 0 0.25em 1.1em;
+    border-inline-start: 3px solid var(--reader-border);
     font-style: italic;
-    position: relative;
 }
 
 blockquote p {
@@ -287,21 +406,32 @@ blockquote cite {
 }
 
 blockquote cite:before {
-    content: "— ";
+    content: "\2014 ";
 }
 
-a:link {
+a:link, a:visited {
     color: var(--reader-link);
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.15em;
 }
 
 figure {
-    margin-left: 0;
-    margin-right: 0;
+    max-width: 100%;
+    margin: 1.5em 0;
+}
+
+figure > img,
+figure > picture,
+picture > img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 figcaption, cite {
-    opacity: 0.5;
-    font-size: small;
+    opacity: 0.68;
+    font-size: 0.82em;
+    line-height: 1.4;
 }
 
 .__subtitle {
@@ -325,15 +455,8 @@ figcaption, cite {
     opacity: 0.5;
 }
 
-#__content {
-    padding: 0 16px 16px 16px;
-    margin: auto;
-    max-width: 700px;
-}
-
 #__footer {
-    margin-bottom: 4em;
-    margin-top: 2em;
+    margin: 2.5em 0 4em;
 }
 
 #__footer > .label {
@@ -359,10 +482,24 @@ figcaption, cite {
 }
 
 iframe {
+    display: block;
     width: 100%;
     max-width: 100%;
-    height: 250px;
-    max-height: 250px;
+    height: auto !important;
+    min-height: 240px;
+    max-height: 80vh;
+    aspect-ratio: 16 / 9;
+    margin: 1.5em 0;
+    border: 0;
+    border-radius: 10px;
+}
+
+video {
+    display: block;
+    width: 100%;
+    height: auto !important;
+    margin: 1.5em auto;
+    border-radius: 10px;
 }
 
 code {
@@ -372,22 +509,33 @@ code {
     background-color: var(--reader-bg);
     border: 1px solid var(--reader-border);
     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    font-size: $fontSizeCss;
+    font-size: 0.9em;
     color: var(--reader-text);
 }
 
 pre code {
     letter-spacing: -.027em;
-    font-size: $fontSizeCss;
+    font-size: 1em;
     background-color: transparent;
     border: none;
     padding: 0;
 }
 
-img, iframe, object, video {
-    max-width: 100%;
-    height: auto;
-    border-radius: 7px;
+hr {
+    height: 1px;
+    margin: 2em 0;
+    border: 0;
+    background: var(--reader-border);
+}
+
+@media screen and (max-width: 480px) {
+    blockquote {
+        padding-inline-start: 0.85em;
+    }
+
+    pre {
+        padding: 12px;
+    }
 }
 
     """.trimIndent()

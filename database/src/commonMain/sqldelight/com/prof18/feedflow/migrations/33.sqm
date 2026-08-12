@@ -1,0 +1,7 @@
+ALTER TABLE feed_item ADD COLUMN first_seen_at INTEGER NOT NULL DEFAULT 0;
+
+UPDATE feed_item
+SET first_seen_at = COALESCE(
+    pub_date,
+    CAST(strftime('%s', 'now') AS INTEGER) * 1000
+);

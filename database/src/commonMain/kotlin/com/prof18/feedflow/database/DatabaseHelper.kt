@@ -10,6 +10,8 @@ import app.cash.sqldelight.coroutines.mapToOneOrDefault
 import app.cash.sqldelight.db.SqlDriver
 import co.touchlab.kermit.Logger
 import com.prof18.feedflow.core.model.ArticleExportFilter
+import com.prof18.feedflow.core.model.ArticleInteraction
+import com.prof18.feedflow.core.model.ArticleInteractionType
 import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.CategoryWithUnreadCount
 import com.prof18.feedflow.core.model.FeedFilter
@@ -24,9 +26,15 @@ import com.prof18.feedflow.core.model.FeedSourceCacheInfo
 import com.prof18.feedflow.core.model.FeedSourceCategory
 import com.prof18.feedflow.core.model.FeedSourceToNotify
 import com.prof18.feedflow.core.model.FeedSourceWithUnreadCount
+import com.prof18.feedflow.core.model.FlowPace
 import com.prof18.feedflow.core.model.ParsedFeedSource
 import com.prof18.feedflow.core.model.PrefetchQueueItem
+import com.prof18.feedflow.core.model.RateLimit
+import com.prof18.feedflow.core.model.ReadingHistoryItem
+import com.prof18.feedflow.core.model.ReadingProgress
+import com.prof18.feedflow.core.model.SourcePresentation
 import com.prof18.feedflow.core.model.SyncedFeedItem
+import com.prof18.feedflow.core.model.VoiceStatus
 import com.prof18.feedflow.db.FeedFlowDB
 import com.prof18.feedflow.db.Feed_item_status
 import com.prof18.feedflow.db.Feed_source
@@ -61,6 +69,10 @@ class DatabaseHelper(
         feed_source_preferencesAdapter = Feed_source_preferences.Adapter(
             article_open_modeAdapter = EnumColumnAdapter(),
             pinned_positionAdapter = IntColumnAdapter,
+            flow_paceAdapter = EnumColumnAdapter(),
+            voice_statusAdapter = EnumColumnAdapter(),
+            source_presentationAdapter = EnumColumnAdapter(),
+            rate_limitAdapter = EnumColumnAdapter(),
         ),
         feed_source_categoryAdapter = Feed_source_category.Adapter(
             positionAdapter = IntColumnAdapter,
@@ -135,6 +147,8 @@ class DatabaseHelper(
         sortOrder: FeedOrder,
         lastPubDate: Long? = null,
         lastUrlHash: String? = null,
+        currentTimeMillis: Long = Clock.System.now().toEpochMilliseconds(),
+        pinnedFilter: Long? = null,
     ): List<SelectFeeds> = withContext(backgroundDispatcher) {
         dbRef.feedItemQueries
             .selectFeeds(
@@ -148,6 +162,11 @@ class DatabaseHelper(
                 lastUrlHash = lastUrlHash,
                 lastPubDate = lastPubDate,
                 pageSize = pageSize,
+                currentTime = currentTimeMillis,
+                applyFlowRules = feedFilter.getApplyFlowRulesFlag(),
+                isSavedView = feedFilter.getIsSavedViewFlag(),
+                voicesOnly = feedFilter.getVoicesOnlyFlag(),
+                pinnedFilter = pinnedFilter,
             )
             .executeAsList()
     }
@@ -167,6 +186,11 @@ class DatabaseHelper(
                 lastUrlHash = null,
                 lastPubDate = null,
                 pageSize = pageSize,
+                currentTime = Clock.System.now().toEpochMilliseconds(),
+                applyFlowRules = 0,
+                isSavedView = 0,
+                voicesOnly = 0,
+                pinnedFilter = null,
             )
             .asFlow()
             .mapToList(backgroundDispatcher)
@@ -223,8 +247,9 @@ class DatabaseHelper(
             for (feedItem in feedItems) {
                 with(feedItem) {
                     val isDeleted = dbRef.deletedFeedItemsQueries.isItemDeleted(id).executeAsOne()
+                    val isReleased = dbRef.releasedFeedItemsQueries.isFeedItemReleased(id).executeAsOne()
 
-                    if (!isDeleted) {
+                    if (!isDeleted && !isReleased) {
                         dbRef.feedItemQueries.insertFeedItem(
                             url_hash = id,
                             url = url,
@@ -235,6 +260,8 @@ class DatabaseHelper(
                             feed_source_id = feedSource.id,
                             pub_date = pubDateMillis,
                             comments_url = commentsUrl,
+                            author = author,
+                            first_seen_at = lastSyncTimestamp,
                         )
                     }
 
@@ -332,19 +359,31 @@ class DatabaseHelper(
                     dbRef.feedItemQueries.markAllReadByCategory(feedFilter.feedCategory.id)
                 }
 
+                is FeedFilter.Stream -> {
+                    dbRef.feedItemQueries.markAllReadByCategory(feedFilter.feedCategory.id)
+                }
+
                 is FeedFilter.Source -> {
                     dbRef.feedItemQueries.markAllReadByFeedSource(feedFilter.feedSource.id)
                 }
 
-                FeedFilter.Timeline -> {
+                FeedFilter.Timeline,
+                FeedFilter.Flow,
+                -> {
                     dbRef.feedItemQueries.markAllRead()
                 }
 
-                FeedFilter.Uncategorized -> {
+                FeedFilter.Uncategorized,
+                FeedFilter.UncategorizedStream,
+                -> {
                     dbRef.feedItemQueries.markAllReadUncategorized()
                 }
 
-                FeedFilter.Read, FeedFilter.Bookmarks -> {
+                FeedFilter.Read,
+                FeedFilter.Bookmarks,
+                FeedFilter.Saved,
+                FeedFilter.Voices,
+                -> {
                     // Do nothing
                 }
             }
@@ -437,6 +476,44 @@ class DatabaseHelper(
         ).executeAsList().map { FeedItemId(it.url_hash) }
     }
 
+    suspend fun letGoFeedItem(feedItemId: FeedItemId) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.releasedFeedItemsQueries.releaseFeedItem(
+                url_hash = feedItemId.id,
+                released_at = Clock.System.now().toEpochMilliseconds(),
+            )
+            dbRef.readStatusPendingActionQueries.deleteReadStatusPendingActionsForFeedItems(
+                listOf(feedItemId.id),
+            )
+            dbRef.feedItemQueries.deleteFeedItem(feedItemId.id)
+        }
+
+    suspend fun restoreLetGoFeedItem(feedItem: FeedItem) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.releasedFeedItemsQueries.restoreReleasedFeedItem(feedItem.id)
+            dbRef.feedItemQueries.insertFeedItem(
+                url_hash = feedItem.id,
+                url = feedItem.url,
+                title = feedItem.title,
+                subtitle = feedItem.subtitle,
+                content = feedItem.content,
+                image_url = feedItem.imageUrl,
+                feed_source_id = feedItem.feedSource.id,
+                pub_date = feedItem.pubDateMillis,
+                comments_url = feedItem.commentsUrl,
+                author = feedItem.author,
+                first_seen_at = Clock.System.now().toEpochMilliseconds(),
+            )
+            dbRef.feedItemQueries.updateReadStatus(
+                isRead = feedItem.isRead,
+                urlHash = feedItem.id,
+            )
+            dbRef.feedItemQueries.updateBookmarkStatus(
+                starred = feedItem.isBookmarked,
+                urlHash = feedItem.id,
+            )
+        }
+
     suspend fun cleanupOldDeletedItems(monthsToKeep: Int = 6) =
         try {
             dbRef.transactionWithContext(backgroundDispatcher) {
@@ -448,6 +525,177 @@ class DatabaseHelper(
             }
         } catch (_: Exception) {
             logger.d { "Error while cleaning up old deleted items" }
+        }
+
+    suspend fun pruneReleasedFeedItems() =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            val threshold = Clock.System.now().minus(30.days).toEpochMilliseconds()
+            dbRef.releasedFeedItemsQueries.pruneReleasedFeedItems(threshold)
+        }
+
+    suspend fun updateFeedSourceCalmSettings(
+        feedSourceId: String,
+        flowPace: FlowPace?,
+        mutedUntilMillis: Long?,
+        voiceStatus: VoiceStatus,
+        sourcePresentation: SourcePresentation,
+        rateLimit: RateLimit,
+    ) = dbRef.transactionWithContext(backgroundDispatcher) {
+        ensureFeedSourcePreference(feedSourceId)
+        dbRef.feedSourcePreferencesQueries.updateCalmSettings(
+            feedSourceId = feedSourceId,
+            flowPace = flowPace,
+            mutedUntil = mutedUntilMillis,
+            voiceStatus = voiceStatus,
+            sourcePresentation = sourcePresentation,
+            rateLimit = rateLimit,
+        )
+    }
+
+    suspend fun inferMissingFlowPaces() = dbRef.transactionWithContext(backgroundDispatcher) {
+        val datesBySource = dbRef.feedItemQueries
+            .selectPublicationDatesForPaceInference()
+            .executeAsList()
+            .groupBy({ it.feed_source_id }, { requireNotNull(it.pub_date) })
+
+        dbRef.feedSourceQueries.selectAllUrlHashes().executeAsList().forEach { feedSourceId ->
+            ensureFeedSourcePreference(feedSourceId)
+            val pace = inferFlowPace(datesBySource[feedSourceId].orEmpty())
+            dbRef.feedSourcePreferencesQueries.updateInferredFlowPace(
+                feedSourceId = feedSourceId,
+                flowPace = pace,
+            )
+        }
+    }
+
+    suspend fun upsertReadingProgress(feedItemId: String, fraction: Float) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.readingProgressQueries.upsertReadingProgress(
+                feed_item_id = feedItemId,
+                progress = fraction.coerceIn(0f, 1f).toDouble(),
+                updated_at = Clock.System.now().toEpochMilliseconds(),
+            )
+        }
+
+    suspend fun getReadingProgress(feedItemId: String): ReadingProgress? =
+        withContext(backgroundDispatcher) {
+            dbRef.readingProgressQueries.getReadingProgress(feedItemId).executeAsOneOrNull()?.let {
+                ReadingProgress(
+                    fraction = it.progress.toFloat(),
+                    updatedAtMillis = it.updated_at,
+                )
+            }
+        }
+
+    suspend fun recordArticleInteraction(interaction: ArticleInteraction) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.articleInteractionQueries.insertArticleInteraction(
+                feed_item_id = interaction.feedItemId,
+                feed_source_id = interaction.feedSourceId,
+                interaction_type = interaction.type.name,
+                occurred_at = interaction.occurredAtMillis,
+            )
+        }
+
+    suspend fun getArticleInteractionsSince(sinceMillis: Long): List<ArticleInteraction> =
+        withContext(backgroundDispatcher) {
+            dbRef.articleInteractionQueries.selectInteractionsSince(sinceMillis).executeAsList().map {
+                ArticleInteraction(
+                    feedItemId = it.feed_item_id,
+                    feedSourceId = it.feed_source_id,
+                    type = ArticleInteractionType.valueOf(it.interaction_type),
+                    occurredAtMillis = it.occurred_at,
+                )
+            }
+        }
+
+    suspend fun upsertReadingHistory(item: ReadingHistoryItem) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.readingHistoryQueries.upsertReadingHistory(
+                feed_item_id = item.feedItemId,
+                url = item.url,
+                title = item.title,
+                summary = item.summary,
+                author = item.author,
+                feed_source_id = item.feedSourceId,
+                feed_source_title = item.feedSourceTitle,
+                article_text = item.articleText,
+                opened_at = item.openedAtMillis,
+            )
+        }
+
+    suspend fun getReadingHistory(): List<ReadingHistoryItem> = withContext(backgroundDispatcher) {
+        dbRef.readingHistoryQueries.selectReadingHistory().executeAsList().map {
+            ReadingHistoryItem(
+                feedItemId = it.feed_item_id,
+                url = it.url,
+                title = it.title,
+                summary = it.summary,
+                author = it.author,
+                feedSourceId = it.feed_source_id,
+                feedSourceTitle = it.feed_source_title,
+                articleText = it.article_text,
+                openedAtMillis = it.opened_at,
+            )
+        }
+    }
+
+    suspend fun searchReadingHistory(query: String): List<ReadingHistoryItem> = withContext(backgroundDispatcher) {
+        dbRef.readingHistoryQueries.searchReadingHistory(query.toFtsPrefixQuery()).executeAsList().map {
+            ReadingHistoryItem(
+                feedItemId = it.feed_item_id,
+                url = it.url,
+                title = it.title,
+                summary = it.summary,
+                author = it.author,
+                feedSourceId = it.feed_source_id,
+                feedSourceTitle = it.feed_source_title,
+                articleText = it.article_text,
+                openedAtMillis = it.opened_at,
+            )
+        }
+    }
+
+    suspend fun clearLocalReadingHistory() = dbRef.transactionWithContext(backgroundDispatcher) {
+        dbRef.readingHistoryQueries.deleteAllReadingHistory()
+        dbRef.readingProgressQueries.deleteAllReadingProgress()
+        dbRef.articleInteractionQueries.deleteAllInteractions()
+    }
+
+    suspend fun recordArticleOpened(feedItemId: String, openedAtMillis: Long) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            val item = dbRef.feedItemQueries.selectFeedItemForHistory(feedItemId).executeAsOneOrNull()
+                ?: return@transactionWithContext
+            dbRef.readingHistoryQueries.upsertReadingHistory(
+                feed_item_id = item.url_hash,
+                url = item.url,
+                title = item.title,
+                summary = item.subtitle,
+                author = item.author,
+                feed_source_id = item.feed_source_id,
+                feed_source_title = item.feed_source_title,
+                article_text = null,
+                opened_at = openedAtMillis,
+            )
+            dbRef.articleInteractionQueries.insertArticleInteraction(
+                feed_item_id = item.url_hash,
+                feed_source_id = item.feed_source_id,
+                interaction_type = ArticleInteractionType.OPENED.name,
+                occurred_at = openedAtMillis,
+            )
+        }
+
+    suspend fun updateReadingHistoryContent(feedItemId: String, articleText: String) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.readingHistoryQueries.updateReadingHistoryContent(
+                feedItemId = feedItemId,
+                articleText = articleText,
+            )
+        }
+
+    suspend fun clearReadingHistoryContent(feedItemId: String) =
+        dbRef.transactionWithContext(backgroundDispatcher) {
+            dbRef.readingHistoryQueries.clearReadingHistoryContent(feedItemId)
         }
 
     suspend fun updateLastSyncTimestamps(feedSourceIds: List<String>, lastSyncTimestamp: Long) =
@@ -767,6 +1015,7 @@ class DatabaseHelper(
                     notification_sent = item.notificationSent,
                     is_blocked = item.isBlocked,
                     content_fetched = false,
+                    author = null,
                 )
             }
         }
@@ -861,6 +1110,10 @@ class DatabaseHelper(
 
     suspend fun deleteAll() = dbRef.transactionWithContext(backgroundDispatcher) {
         dbRef.readStatusPendingActionQueries.deleteAllReadStatusPendingActions()
+        dbRef.articleInteractionQueries.deleteAllInteractions()
+        dbRef.readingProgressQueries.deleteAllReadingProgress()
+        dbRef.readingHistoryQueries.deleteAllReadingHistory()
+        dbRef.releasedFeedItemsQueries.deleteAllReleasedFeedItems()
         dbRef.feedItemQueries.deleteAll()
         dbRef.feedSourceCategoryQueries.deleteAll()
         dbRef.feedSourceCacheInfoQueries.deleteAll()
@@ -873,6 +1126,10 @@ class DatabaseHelper(
         dbRef.feedItemStatusQueries.deleteAllStatuses()
         dbRef.feedItemTempQueries.clearTempFeedItemIds()
         dbRef.deletedFeedItemsQueries.deleteAllDeletedFeedItems()
+        dbRef.releasedFeedItemsQueries.deleteAllReleasedFeedItems()
+        dbRef.articleInteractionQueries.deleteAllInteractions()
+        dbRef.readingProgressQueries.deleteAllReadingProgress()
+        dbRef.readingHistoryQueries.deleteAllReadingHistory()
         dbRef.feedItemQueries.deleteAll()
         dbRef.feedSourcePreferencesQueries.deleteAllPreferences()
         dbRef.feedSourceCategoryQueries.deleteAll()
@@ -937,6 +1194,11 @@ class DatabaseHelper(
                     pinnedPosition = feedSource.pinned_position ?: 0,
                     position = feedSource.feed_source_position,
                     websiteUrl = feedSource.feed_source_website_url,
+                    flowPace = feedSource.flow_pace,
+                    mutedUntilMillis = feedSource.muted_until,
+                    voiceStatus = feedSource.voice_status ?: VoiceStatus.AUTOMATIC,
+                    sourcePresentation = feedSource.source_presentation ?: SourcePresentation.STANDARD,
+                    rateLimit = feedSource.rate_limit ?: RateLimit.NONE,
                 )
             }
     }
@@ -1063,11 +1325,45 @@ class DatabaseHelper(
         }
     }
 
+    private fun ensureFeedSourcePreference(feedSourceId: String) {
+        dbRef.feedSourcePreferencesQueries.insertPreference(
+            feed_source_id = feedSourceId,
+            article_open_mode = ArticleOpenMode.DEFAULT,
+            is_hidden = false,
+            is_pinned = false,
+            notifications_enabled = false,
+            hide_images = false,
+        )
+    }
+
+    private fun inferFlowPace(publicationDates: List<Long>): FlowPace {
+        if (publicationDates.size < 2) return FlowPace.STANDARD
+
+        val intervals = publicationDates.sorted()
+            .zipWithNext { earlier, later -> later - earlier }
+            .filter { it > 0 }
+            .sorted()
+        val medianInterval = intervals.getOrNull(intervals.size / 2) ?: return FlowPace.STANDARD
+        val medianHours = medianInterval / MILLIS_PER_HOUR
+        return when {
+            medianHours <= FlowPace.FLASH.windowHours -> FlowPace.FLASH
+            medianHours <= FlowPace.DAILY.windowHours -> FlowPace.DAILY
+            medianHours <= FlowPace.STANDARD.windowHours -> FlowPace.STANDARD
+            medianHours <= FlowPace.SLOW.windowHours -> FlowPace.SLOW
+            else -> FlowPace.TIMELESS
+        }
+    }
+
     private fun FeedFilter.getFeedSourceId(): String? {
         return when (this) {
             is FeedFilter.Source -> feedSource.id
 
             is FeedFilter.Category,
+            is FeedFilter.Stream,
+            FeedFilter.Flow,
+            FeedFilter.Saved,
+            FeedFilter.Voices,
+            FeedFilter.UncategorizedStream,
             FeedFilter.Timeline,
             FeedFilter.Read,
             FeedFilter.Bookmarks,
@@ -1079,8 +1375,13 @@ class DatabaseHelper(
     private fun FeedFilter.getCategoryId(): String? {
         return when (this) {
             is FeedFilter.Category -> feedCategory.id
+            is FeedFilter.Stream -> feedCategory.id
 
             is FeedFilter.Source,
+            FeedFilter.Flow,
+            FeedFilter.Saved,
+            FeedFilter.Voices,
+            FeedFilter.UncategorizedStream,
             FeedFilter.Timeline,
             FeedFilter.Read,
             FeedFilter.Bookmarks,
@@ -1094,6 +1395,13 @@ class DatabaseHelper(
             is FeedFilter.Read -> true
 
             is FeedFilter.Bookmarks -> null
+
+            FeedFilter.Flow,
+            FeedFilter.Saved,
+            FeedFilter.Voices,
+            FeedFilter.UncategorizedStream,
+            is FeedFilter.Stream,
+            -> null
 
             is FeedFilter.Category,
             is FeedFilter.Source,
@@ -1109,9 +1417,15 @@ class DatabaseHelper(
 
     private fun FeedFilter.getIsHiddenFromTimelineFlag(): Long? {
         return when (this) {
-            is FeedFilter.Timeline -> 0
+            is FeedFilter.Timeline,
+            FeedFilter.Flow,
+            FeedFilter.Voices,
+            -> 0
 
             is FeedFilter.Bookmarks,
+            FeedFilter.Saved,
+            is FeedFilter.Stream,
+            FeedFilter.UncategorizedStream,
             is FeedFilter.Category,
             is FeedFilter.Source,
             FeedFilter.Read,
@@ -1122,10 +1436,16 @@ class DatabaseHelper(
 
     private fun FeedFilter.getBookmarkFlag(): Boolean? {
         return when (this) {
-            is FeedFilter.Bookmarks -> true
+            is FeedFilter.Bookmarks,
+            FeedFilter.Saved,
+            -> true
 
             is FeedFilter.Category,
+            is FeedFilter.Stream,
             is FeedFilter.Source,
+            FeedFilter.Flow,
+            FeedFilter.Voices,
+            FeedFilter.UncategorizedStream,
             FeedFilter.Timeline,
             FeedFilter.Read,
             FeedFilter.Uncategorized,
@@ -1135,15 +1455,46 @@ class DatabaseHelper(
 
     private fun FeedFilter.getIsUncategorized(): Long? {
         return when (this) {
-            FeedFilter.Uncategorized -> 1L
+            FeedFilter.Uncategorized,
+            FeedFilter.UncategorizedStream,
+            -> 1L
 
             is FeedFilter.Category,
+            is FeedFilter.Stream,
             is FeedFilter.Source,
+            FeedFilter.Flow,
+            FeedFilter.Saved,
+            FeedFilter.Voices,
             FeedFilter.Timeline,
             FeedFilter.Read,
             FeedFilter.Bookmarks,
             -> null
         }
+    }
+
+    private fun FeedFilter.getApplyFlowRulesFlag(): Long = when (this) {
+        FeedFilter.Saved,
+        FeedFilter.Bookmarks,
+        FeedFilter.Read,
+        FeedFilter.Timeline,
+        FeedFilter.Uncategorized,
+        is FeedFilter.Category,
+        -> 0
+
+        else -> 1
+    }
+
+    private fun FeedFilter.getIsSavedViewFlag(): Long = when (this) {
+        FeedFilter.Saved,
+        FeedFilter.Bookmarks,
+        -> 1
+
+        else -> 0
+    }
+
+    private fun FeedFilter.getVoicesOnlyFlag(): Long = when (this) {
+        FeedFilter.Voices -> 1
+        else -> 0
     }
 
     private fun transformToFeedSource(feedSource: SelectFeedUrls): FeedSource {
@@ -1173,6 +1524,11 @@ class DatabaseHelper(
             isHideImagesEnabled = feedSource.hide_images ?: false,
             pinnedPosition = feedSource.pinned_position ?: 0,
             position = feedSource.feed_source_position,
+            flowPace = feedSource.flow_pace,
+            mutedUntilMillis = feedSource.muted_until,
+            voiceStatus = feedSource.voice_status ?: VoiceStatus.AUTOMATIC,
+            sourcePresentation = feedSource.source_presentation ?: SourcePresentation.STANDARD,
+            rateLimit = feedSource.rate_limit ?: RateLimit.NONE,
         )
     }
 
@@ -1203,6 +1559,11 @@ class DatabaseHelper(
             isHideImagesEnabled = feedSource.hide_images ?: false,
             pinnedPosition = feedSource.pinned_position ?: 0,
             position = feedSource.feed_source_position,
+            flowPace = feedSource.flow_pace,
+            mutedUntilMillis = feedSource.muted_until,
+            voiceStatus = feedSource.voice_status ?: VoiceStatus.AUTOMATIC,
+            sourcePresentation = feedSource.source_presentation ?: SourcePresentation.STANDARD,
+            rateLimit = feedSource.rate_limit ?: RateLimit.NONE,
         )
     }
 
@@ -1233,6 +1594,11 @@ class DatabaseHelper(
             isHideImagesEnabled = feedSource.hide_images ?: false,
             pinnedPosition = feedSource.pinned_position ?: 0,
             position = feedSource.feed_source_position,
+            flowPace = feedSource.flow_pace,
+            mutedUntilMillis = feedSource.muted_until,
+            voiceStatus = feedSource.voice_status ?: VoiceStatus.AUTOMATIC,
+            sourcePresentation = feedSource.source_presentation ?: SourcePresentation.STANDARD,
+            rateLimit = feedSource.rate_limit ?: RateLimit.NONE,
         )
     }
 
@@ -1330,6 +1696,7 @@ class DatabaseHelper(
         }
 
     companion object {
+        private const val MILLIS_PER_HOUR = 60L * 60L * 1_000L
         internal const val DB_FILE_NAME_WITH_EXTENSION = "FeedFlow.db"
         const val APP_DATABASE_NAME_PROD = "FeedFlowDB"
         const val APP_DATABASE_NAME_DEBUG = "FeedFlowDB-debug"

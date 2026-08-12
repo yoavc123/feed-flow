@@ -1,5 +1,5 @@
-FeedFlow is a minimal RSS reader for people who want a clean, chronological
-timeline — no algorithms, no clutter, no noise. Just your feeds, in order.
+﻿FeedFlow is a minimal RSS reader for people who want a clean, chronological
+timeline â€” no algorithms, no clutter, no noise. Just your feeds, in order.
 
 Whether you follow news sites, blogs, or YouTube channels via RSS, FeedFlow
 gives you a fast, distraction-free way to keep up with everything you care
@@ -10,22 +10,19 @@ Read Articles Your Way
   sessions.
 - Use Reader Mode for a distraction-free article view with adjustable text size
   and spacing.
-- Prefetch and cache full article content for offline reading — read articles
+- Prefetch and cache full article content for offline reading â€” read articles
   anywhere, even without an internet connection.
-- View the original web page or switch to a clean, readable format — the choice
+- View the original web page or switch to a clean, readable format â€” the choice
   is yours.
 
-Ziņu plūsmu sinhronizācija visās jūsu ierīcēs
+ZiÅ†u plÅ«smu sinhronizÄcija visÄs jÅ«su ierÄ«cÄ“s
 - Keep everything local, or sync feeds across devices with multiple backends.
-- Mākoņkrātuves sinhronizācija ar Dropbox vai Google disku.
-- Pašizmitināta pakalpojuma un servera sinhronizācijas iespējas ar FreshRSS,
+- MÄkoÅ†krÄtuves sinhronizÄcija ar Dropbox vai Google disku.
+- PaÅ¡izmitinÄta pakalpojuma un servera sinhronizÄcijas iespÄ“jas ar FreshRSS,
   Miniflux, Feedbin vai BazQux.
-- Your feeds, read status, and bookmarks stay in sync across Android, iOS,
-  macOS, Windows, and Linux.
-- Switch between phone, tablet, and desktop without losing your place.
 
 Stay Organized with Feeds and Categories
-- Import and export feeds with OPML — migrate from any other RSS reader or news
+- Import and export feeds with OPML â€” migrate from any other RSS reader or news
   reader in minutes.
 - Block noisy keywords to filter out unwanted content from your feed.
 - Organize RSS feeds into categories and bookmark articles to read later.
@@ -41,23 +38,22 @@ A News Reading Experience You Control
 Built for RSS, Atom, and the Open Web
 - Full support for RSS 2.0, RSS 1.0, and Atom feed formats.
 - Subscribe to blogs, news sites, YouTube channels, and more.
-- No account required — add feeds directly by URL or browse curated feed
+- No account required â€” add feeds directly by URL or browse curated feed
   suggestions to get started.
 - OPML import and export means you're never locked in to any single app.
 
-Ideāli piemērots
+IdeÄli piemÄ“rots
 - News enthusiasts who want a chronological feed without algorithmic
   recommendations.
 - Blog readers who want all their favorite sites in one clean timeline.
-- Entuziastiem, kuri izmanto pašizmitinātus FreshRSS, Miniflux vai līdzīgus
+- Entuziastiem, kuri izmanto paÅ¡izmitinÄtus FreshRSS, Miniflux vai lÄ«dzÄ«gus
   pakalpojumus.
-- Anyone switching from another feed reader — OPML import makes migration
+- Anyone switching from another feed reader â€” OPML import makes migration
   simple.
 
-Kāpēc FeedFlow?
-- No algorithmic feed — your timeline is always chronological.
+KÄpÄ“c FeedFlow?
+- No algorithmic feed â€” your timeline is always chronological.
 - Open source with an active community and regular updates.
-- Pieejama Android, iOS, macOS, Windows un Linux operētājsistēmās.
-- Iztulkota vairāk nekā 25 valodās, pateicoties cilvēkiem visā pasaulē.
+- Iztulkota vairÄk nekÄ 25 valodÄs, pateicoties cilvÄ“kiem visÄ pasaulÄ“.
 
-Take back control of your news and reading — download FeedFlow today.
+Take back control of your news and reading â€” download FeedFlow today.

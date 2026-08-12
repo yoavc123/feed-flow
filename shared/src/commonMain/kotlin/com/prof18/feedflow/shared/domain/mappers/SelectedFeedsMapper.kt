@@ -5,13 +5,19 @@ import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.FeedItem
 import com.prof18.feedflow.core.model.FeedSource
 import com.prof18.feedflow.core.model.FeedSourceCategory
+import com.prof18.feedflow.core.model.FlowPace
+import com.prof18.feedflow.core.model.RateLimit
+import com.prof18.feedflow.core.model.SourcePresentation
+import com.prof18.feedflow.core.model.VoiceStatus
 import com.prof18.feedflow.core.utils.ContentDirectionDetector
 import com.prof18.feedflow.db.SelectFeeds
 import com.prof18.feedflow.shared.utils.sanitizeUrl
 
+@Suppress("CyclomaticComplexMethod")
 internal fun SelectFeeds.toFeedItem(
     dateFormatter: DateFormatter,
     settings: FeedItemMappingSettings,
+    nowMillis: Long = dateFormatter.currentTimeMillis(),
 ): FeedItem {
     val resolvedSubtitle = subtitle?.let { desc ->
         val title = title
@@ -22,6 +28,36 @@ internal fun SelectFeeds.toFeedItem(
         }
     }.takeIf { !settings.hideDescription }
 
+    val feedSource = FeedSource(
+        id = feed_source_id,
+        url = feed_source_url,
+        title = feed_source_title,
+        category = if (feed_source_category_title != null && feed_source_category_id != null) {
+            @Suppress("RedundantRequireNotNullCall")
+            FeedSourceCategory(
+                id = requireNotNull(feed_source_category_id),
+                title = requireNotNull(feed_source_category_title),
+            )
+        } else {
+            null
+        },
+        lastSyncTimestamp = feed_source_last_sync_timestamp,
+        logoUrl = feed_source_logo_url,
+        websiteUrl = null,
+        articleOpenMode = feed_source_article_open_mode ?: ArticleOpenMode.DEFAULT,
+        isHiddenFromTimeline = feed_source_is_hidden ?: false,
+        isPinned = feed_source_is_pinned ?: false,
+        isNotificationEnabled = feed_source_notifications_enabled ?: false,
+        isHideImagesEnabled = feed_source_hide_images ?: false,
+        fetchFailed = feed_source_fetch_failed,
+        flowPace = feed_source_flow_pace,
+        mutedUntilMillis = feed_source_muted_until,
+        voiceStatus = feed_source_voice_status ?: VoiceStatus.AUTOMATIC,
+        sourcePresentation = feed_source_presentation ?: SourcePresentation.STANDARD,
+        rateLimit = feed_source_rate_limit ?: RateLimit.NONE,
+    )
+    val effectivePace = feedSource.flowPace ?: FlowPace.STANDARD
+
     return FeedItem(
         id = url_hash,
         url = sanitizeUrl(url),
@@ -30,30 +66,7 @@ internal fun SelectFeeds.toFeedItem(
         contentDirection = ContentDirectionDetector.detect(listOfNotNull(title, resolvedSubtitle)),
         content = null,
         imageUrl = image_url.takeIf { !settings.hideImages && feed_source_hide_images != true },
-        feedSource = FeedSource(
-            id = feed_source_id,
-            url = feed_source_url,
-            title = feed_source_title,
-            category = if (feed_source_category_title != null && feed_source_category_id != null) {
-                @Suppress("RedundantRequireNotNullCall")
-                // It's required because the variables come from another module
-                FeedSourceCategory(
-                    id = requireNotNull(feed_source_category_id),
-                    title = requireNotNull(feed_source_category_title),
-                )
-            } else {
-                null
-            },
-            lastSyncTimestamp = feed_source_last_sync_timestamp,
-            logoUrl = feed_source_logo_url,
-            websiteUrl = null,
-            articleOpenMode = feed_source_article_open_mode ?: ArticleOpenMode.DEFAULT,
-            isHiddenFromTimeline = feed_source_is_hidden ?: false,
-            isPinned = feed_source_is_pinned ?: false,
-            isNotificationEnabled = feed_source_notifications_enabled ?: false,
-            isHideImagesEnabled = feed_source_hide_images ?: false,
-            fetchFailed = feed_source_fetch_failed,
-        ),
+        feedSource = feedSource,
         pubDateMillis = pub_date,
         dateString = if (pub_date != null && !settings.hideDate) {
             dateFormatter.formatDateForFeed(
@@ -67,5 +80,9 @@ internal fun SelectFeeds.toFeedItem(
         isRead = is_read,
         commentsUrl = comments_url?.let { sanitizeUrl(it) },
         isBookmarked = is_bookmarked,
+        author = author,
+        isSavedOffline = is_bookmarked && content_fetched,
+        freshnessTimestampMillis = pub_date ?: first_seen_at,
+        freshness = effectivePace.freshness(pub_date ?: first_seen_at, nowMillis),
     )
 }

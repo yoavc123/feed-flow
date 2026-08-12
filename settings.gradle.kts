@@ -16,7 +16,6 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://jitpack.io")
             content {
-                includeModule("com.github.Dansoftowner", "jSystemThemeDetector")
                 includeModule("com.github.prof18", "lyricist")
             }
         }
@@ -32,15 +31,12 @@ include(":androidApp")
 include(":benchmarks")
 include(":shared")
 include(":sharedUI")
-include(":desktopApp")
 include(":i18n")
 include(":core")
 include("database")
 include(":feedSync:database")
 include("feedSync:dropbox")
 include("feedSync:googledrive")
-include("feedSync:icloud")
-include("feedSync:ikloud-macos")
 include("feedSync:greader")
 include("feedSync:feedbin")
 include("feedSync:networkcore")

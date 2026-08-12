@@ -6,13 +6,11 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
@@ -43,12 +41,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.prof18.feedflow.core.model.FeedItemId
 import com.prof18.feedflow.core.model.FeedLayout
 import com.prof18.feedflow.core.model.FeedOrder
 import com.prof18.feedflow.core.model.NoFeedSourcesStatus
@@ -63,6 +59,7 @@ import com.prof18.feedflow.shared.ui.home.components.NoFeedsSourceView
 import com.prof18.feedflow.shared.ui.home.components.ScrollToTopButton
 import com.prof18.feedflow.shared.ui.home.components.list.FeedList
 import com.prof18.feedflow.shared.ui.home.components.list.FeedListMaxContentWidth
+import com.prof18.feedflow.shared.ui.style.FeedFlowMotion
 import com.prof18.feedflow.shared.ui.style.Spacing
 import com.prof18.feedflow.shared.ui.utils.LocalReduceMotion
 import com.prof18.feedflow.shared.ui.utils.scrollToItemConditionally
@@ -71,9 +68,9 @@ import kotlinx.coroutines.launch
 private val listTopContentPadding = 4.dp
 private val feedLoaderReservedHeight = 48.dp
 private val floatingToolbarHeight = 64.dp
-private val scrimFeather = 24.dp
 
 @Composable
+@Suppress("CyclomaticComplexMethod")
 fun AndroidHomeScreenContent(
     displayState: HomeDisplayState,
     feedListActions: FeedListActions,
@@ -84,7 +81,7 @@ fun AndroidHomeScreenContent(
     onSearchClick: () -> Unit,
     viewMenuState: HomeViewMenuState,
     onFeedOrderChange: (FeedOrder) -> Unit,
-    onShowReadArticlesTimelineChange: (Boolean) -> Unit,
+    onFocusClick: () -> Unit,
     modifier: Modifier = Modifier,
     gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
     showDrawerMenu: Boolean = false,
@@ -229,12 +226,15 @@ fun AndroidHomeScreenContent(
                                 animationSpec = if (reduceMotionEnabled) {
                                     snap()
                                 } else {
-                                    tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                                    tween(durationMillis = FeedFlowMotion.SETTLE, easing = FastOutSlowInEasing)
                                 },
                                 label = "feedListTopPadding",
                             )
 
-                            if (displayState.feedItems.isEmpty() && isRefreshing) {
+                            if (displayState.feedItems.isEmpty() &&
+                                displayState.pinnedFeedItems.isEmpty() &&
+                                isRefreshing
+                            ) {
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.fillMaxSize(),
@@ -251,14 +251,16 @@ fun AndroidHomeScreenContent(
                                     )
 
                                     Box(
-                                        modifier = feedListWidthModifier.fillMaxHeight(),
+                                        modifier = feedListWidthModifier
+                                            .fillMaxHeight()
+                                            .padding(top = feedListTopPadding),
                                     ) {
                                         FeedList(
                                             modifier = Modifier.fillMaxSize(),
                                             feedItems = displayState.feedItems,
+                                            pinnedFeedItems = displayState.pinnedFeedItems,
                                             listState = listState,
                                             gridState = gridState,
-                                            contentPadding = PaddingValues(top = feedListTopPadding),
                                             feedFontSize = displayState.feedFontSizes,
                                             nextFeedState = displayState.nextFeedDisplayState,
                                             shareCommentsMenuLabel = shareBehavior.shareCommentsTitle,
@@ -269,17 +271,15 @@ fun AndroidHomeScreenContent(
                                             onGridArrangementChanged = { isGridArrangement = it },
                                             onFeedItemClick = { feedInfo ->
                                                 feedListActions.openUrl(feedInfo)
-                                                feedListActions.markAsRead(FeedItemId(feedInfo.id))
                                             },
                                             onOpenInBrowser = feedListActions.openInBrowser,
                                             onBookmarkClick = feedListActions.updateBookmarkStatus,
                                             onReadStatusClick = feedListActions.updateReadStatus,
+                                            onLetGo = feedListActions.letGo,
                                             onCommentClick = { feedInfo ->
                                                 feedListActions.openUrl(feedInfo)
-                                                feedListActions.markAsRead(FeedItemId(feedInfo.id))
                                             },
                                             onVisibleFeedItemsChanged = feedListActions.onVisibleFeedItemsChanged,
-                                            markAllAsRead = feedListActions.markAllRead,
                                             onShareClick = shareBehavior.onShareClick,
                                             onOpenFeedSettings = feedManagementActions.onEditFeedClick,
                                             onOpenFeedWebsite = feedManagementActions.onOpenWebsite,
@@ -289,6 +289,7 @@ fun AndroidHomeScreenContent(
                                             onMarkAllBelowAsRead = feedListActions.markAllBelowAsRead,
                                             onNavigateNext = { onNavigateToNextFeed() },
                                             feedItemDisplaySettings = displayState.feedItemDisplaySettings,
+                                            coachingCards = displayState.coachingCards,
                                         )
                                     }
                                 }
@@ -297,23 +298,6 @@ fun AndroidHomeScreenContent(
                     }
                 }
             }
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(topInset + scrimFeather)
-                    .zIndex(zIndex = 0.5f)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                contentContainerColor,
-                                contentContainerColor.copy(alpha = 0.8f),
-                                Color.Transparent,
-                            ),
-                        ),
-                    ),
-            )
 
             Box(
                 modifier = Modifier
@@ -334,7 +318,6 @@ fun AndroidHomeScreenContent(
                 isDrawerOpen = isDrawerOpen,
                 onDrawerMenuClick = onDrawerMenuClick,
                 onSearchClick = onSearchClick,
-                onMarkAllReadClicked = feedListActions.markAllRead,
                 onClearOldArticlesClicked = feedListActions.onClearOldArticlesClicked,
                 onEditFeedClick = feedManagementActions.onEditFeedClick,
                 onClick = {
@@ -361,7 +344,7 @@ fun AndroidHomeScreenContent(
                 onBackupClick = onBackupClick,
                 viewMenuState = viewMenuState,
                 onFeedOrderChange = onFeedOrderChange,
-                onShowReadArticlesTimelineChange = onShowReadArticlesTimelineChange,
+                onFocusClick = onFocusClick,
             )
         }
     }

@@ -44,8 +44,8 @@ class MenuBarViewModelTest : KoinTestBase() {
     fun `initial state is loaded correctly`() = runTest {
         val state = viewModel.state.value
         assertEquals(ThemeMode.SYSTEM, state.themeMode)
-        assertTrue(state.isMarkReadWhenScrollingEnabled)
-        assertFalse(state.isShowReadItemsEnabled)
+        assertFalse(state.isMarkReadWhenScrollingEnabled)
+        assertTrue(state.isShowReadItemsEnabled)
         assertFalse(state.isHideReadItemsEnabled)
         assertEquals(ArticleOpenMode.FULL_ARTICLE, state.articleOpenMode)
         assertFalse(state.isSaveReaderModeContentEnabled)

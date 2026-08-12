@@ -100,6 +100,30 @@ class ReaderModeViewModelTest : KoinTestBase() {
     }
 
     @Test
+    fun `opening records history and reading progress is restored`() = runTest {
+        val item = seedItemWithContent(
+            id = "progress-item",
+            url = "https://example.com/progress",
+            content = SUBSTANTIAL_CONTENT,
+        )
+
+        viewModel.getReaderModeHtml(item.toUrlInfo(ArticleOpenMode.FEED_CONTENT))
+        advanceUntilIdle()
+        viewModel.updateReadingProgress(0.52f)
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertEquals("progress-item", databaseHelper.getReadingHistory().single().feedItemId)
+        assertEquals(0.52f, databaseHelper.getReadingProgress("progress-item")?.normalizedFraction)
+
+        viewModel.resetState()
+        viewModel.getReaderModeHtml(item.toUrlInfo(ArticleOpenMode.FEED_CONTENT))
+        advanceUntilIdle()
+
+        assertEquals(0.52f, viewModel.readingProgressState.value?.normalizedFraction)
+    }
+
+    @Test
     fun `getReaderModeHtml updates selected article`() = runTest {
         val urlInfo = FeedItemUrlInfo(
             id = "open-1",
@@ -688,7 +712,7 @@ class ReaderModeViewModelTest : KoinTestBase() {
     @Test
     fun `blank url item falls back to the stored feed base url`() = runTest {
         val item = seedItemWithContent("blank-url-stored-base", url = "", content = "<p>Short post</p>")
-        // The Compose feed list and the desktop reader route build FeedItemUrlInfo without it.
+        // Feed-list navigation builds FeedItemUrlInfo without cached content.
         val urlInfo = item.toUrlInfo().copy(feedSourceBaseUrl = null)
 
         viewModel.getReaderModeHtml(urlInfo)

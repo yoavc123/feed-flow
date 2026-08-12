@@ -1,14 +1,19 @@
 package com.prof18.feedflow.android.readermode
 
 import android.webkit.CookieManager
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,13 +23,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,8 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -58,8 +60,9 @@ import com.prof18.feedflow.android.BrowserManager
 import com.prof18.feedflow.android.openShareSheet
 import com.prof18.feedflow.core.model.FeedItemId
 import com.prof18.feedflow.core.model.ReaderModeState
+import com.prof18.feedflow.core.model.ReadingProgressLabel
 import com.prof18.feedflow.core.model.ShownContentSource
-import com.prof18.feedflow.core.model.ThemeMode
+import com.prof18.feedflow.core.model.toReadingProgressLabel
 import com.prof18.feedflow.shared.domain.ReaderColors
 import com.prof18.feedflow.shared.domain.getReaderModeStyledHtml
 import com.prof18.feedflow.shared.domain.readerLineHeightJs
@@ -74,7 +77,6 @@ import kotlin.time.Duration.Companion.milliseconds
 internal fun ReaderModeScreen(
     readerModeState: ReaderModeState,
     fontSize: Int,
-    themeMode: ThemeMode,
     onUpdateFontSize: (Int) -> Unit,
     lineHeight: Int,
     onUpdateLineHeight: (Int) -> Unit,
@@ -85,6 +87,8 @@ internal fun ReaderModeScreen(
     onNavigateToPrevious: () -> Unit,
     onNavigateToNext: () -> Unit,
     onToggleContentSource: () -> Unit,
+    onReadingProgress: (Float) -> Unit,
+    initialReadingProgress: Float?,
     isDetailFullscreen: Boolean = false,
     onToggleDetailFullscreen: (() -> Unit)? = null,
 ) {
@@ -93,102 +97,101 @@ internal fun ReaderModeScreen(
     val context = LocalContext.current
     val navigator = rememberWebViewNavigator()
     var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
-    var toolbarExpanded by rememberSaveable { mutableStateOf(true) }
+    var toolbarVisible by rememberSaveable { mutableStateOf(true) }
+    val articleId = (readerModeState as? ReaderModeState.Success)?.readerModeData?.id?.id
+    var readingProgress by rememberSaveable(articleId) { mutableStateOf(initialReadingProgress ?: 0f) }
+
+    LaunchedEffect(articleId, initialReadingProgress) {
+        toolbarVisible = true
+        if (initialReadingProgress != null) {
+            readingProgress = initialReadingProgress
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
         Scaffold(
-            topBar = {
-                ReaderModeToolbar(
-                    navigateBack = {
-                        if (navigator.canGoBack) {
-                            navigator.navigateBack()
-                        } else {
-                            navigateBack()
-                        }
-                    },
-                    isDetailFullscreen = isDetailFullscreen,
-                    onToggleDetailFullscreen = onToggleDetailFullscreen,
-                )
-            },
-
+            containerColor = MaterialTheme.colorScheme.surface,
         ) { contentPadding ->
             Box(
-                modifier = Modifier,
+                modifier = Modifier.fillMaxSize(),
             ) {
-                Box(
+                AnimatedVisibility(
+                    visible = toolbarVisible && readerModeState !is ReaderModeState.Loading,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 }),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .zIndex(zIndex = 0.5f)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                    MaterialTheme.colorScheme.surface,
-                                ),
-                            ),
+                        .zIndex(1f)
+                        .padding(
+                            start = 12.dp,
+                            end = 12.dp,
+                            bottom = contentPadding.calculateBottomPadding() + 12.dp,
                         ),
-                )
-
-                if (readerModeState !is ReaderModeState.Loading) {
-                    ReaderModeFloatingToolbar(
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                            .offset(y = -ScreenOffset)
-                            .zIndex(1f)
-                            .padding(
-                                start = 24.dp,
-                                end = 24.dp,
-                                bottom = contentPadding.calculateBottomPadding(),
-                            ),
-                        expanded = toolbarExpanded,
-                        readerModeState = readerModeState,
-                        fontSize = fontSize,
-                        openInBrowser = { url ->
-                            if (isValidUrl(url)) {
-                                browserManager.openUrlWithFavoriteBrowser(url, context)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (readerModeState is ReaderModeState.Success) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tonalElevation = 2.dp,
+                            ) {
+                                Text(
+                                    text = readingProgress.toReadingProgressLabel().label(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                )
                             }
-                        },
-                        onShareClick = { url, title ->
-                            context.openShareSheet(
-                                title = title,
-                                url = url,
-                            )
-                        },
-                        onArchiveClick = { articleUrl ->
-                            val archiveUrl = getArchiveISUrl(articleUrl)
-                            if (isValidUrl(archiveUrl)) {
-                                browserManager.openUrlWithFavoriteBrowser(archiveUrl, context)
-                            }
-                        },
-                        onCommentsClick = { commentsUrl ->
-                            if (isValidUrl(commentsUrl)) {
-                                browserManager.openUrlWithFavoriteBrowser(commentsUrl, context)
-                            }
-                        },
-                        onFontSizeChange = { newFontSize ->
-                            navigator.evaluateJavaScript(
-                                """
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                        ReaderModeFloatingToolbar(
+                            readerModeState = readerModeState,
+                            fontSize = fontSize,
+                            openInBrowser = { url ->
+                                if (isValidUrl(url)) {
+                                    browserManager.openUrlWithFavoriteBrowser(url, context)
+                                }
+                            },
+                            onShareClick = { url, title ->
+                                context.openShareSheet(
+                                    title = title,
+                                    url = url,
+                                )
+                            },
+                            onArchiveClick = { articleUrl ->
+                                val archiveUrl = getArchiveISUrl(articleUrl)
+                                if (isValidUrl(archiveUrl)) {
+                                    browserManager.openUrlWithFavoriteBrowser(archiveUrl, context)
+                                }
+                            },
+                            onCommentsClick = { commentsUrl ->
+                                if (isValidUrl(commentsUrl)) {
+                                    browserManager.openUrlWithFavoriteBrowser(commentsUrl, context)
+                                }
+                            },
+                            onFontSizeChange = { newFontSize ->
+                                navigator.evaluateJavaScript(
+                                    """
         document.getElementById("container").style.fontSize = "$newFontSize" + "px";
-                                """.trimIndent(),
-                            )
-                            onUpdateFontSize(newFontSize)
-                        },
-                        lineHeight = lineHeight,
-                        onLineHeightChange = { newLineHeight ->
-                            navigator.evaluateJavaScript(readerLineHeightJs(newLineHeight))
-                            onUpdateLineHeight(newLineHeight)
-                        },
-                        onBookmarkClick = onBookmarkClick,
-                        onToggleContentSource = onToggleContentSource,
-                        canNavigatePrevious = canNavigatePrevious,
-                        canNavigateNext = canNavigateNext,
-                        onNavigateToPrevious = onNavigateToPrevious,
-                        onNavigateToNext = onNavigateToNext,
-                    )
+                                    """.trimIndent(),
+                                )
+                                onUpdateFontSize(newFontSize)
+                            },
+                            lineHeight = lineHeight,
+                            onLineHeightChange = { newLineHeight ->
+                                navigator.evaluateJavaScript(readerLineHeightJs(newLineHeight))
+                                onUpdateLineHeight(newLineHeight)
+                            },
+                            onBookmarkClick = onBookmarkClick,
+                            onToggleContentSource = onToggleContentSource,
+                            canNavigatePrevious = canNavigatePrevious,
+                            canNavigateNext = canNavigateNext,
+                            onNavigateToPrevious = onNavigateToPrevious,
+                            onNavigateToNext = onNavigateToNext,
+                        )
+                    }
                 }
 
                 when (readerModeState) {
@@ -234,14 +237,39 @@ internal fun ReaderModeScreen(
                             },
                             contentPadding = contentPadding,
                             navigator = navigator,
-                            themeMode = themeMode,
-                            onExpandToolbar = { toolbarExpanded = true },
-                            onCollapseToolbar = { toolbarExpanded = false },
+                            onExpandToolbar = { toolbarVisible = true },
+                            onCollapseToolbar = { toolbarVisible = false },
+                            onReadingProgress = { progress ->
+                                readingProgress = progress
+                                onReadingProgress(progress)
+                            },
+                            initialReadingProgress = initialReadingProgress,
                             modifier = Modifier.testTag(
                                 ReaderModeE2eIds.article(readerModeState.readerModeData.id.id),
                             ),
                         )
                     }
+                }
+
+                AnimatedVisibility(
+                    visible = toolbarVisible,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
+                    exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .zIndex(1f),
+                ) {
+                    ReaderModeToolbar(
+                        navigateBack = {
+                            if (navigator.canGoBack) {
+                                navigator.navigateBack()
+                            } else {
+                                navigateBack()
+                            }
+                        },
+                        isDetailFullscreen = isDetailFullscreen,
+                        onToggleDetailFullscreen = onToggleDetailFullscreen,
+                    )
                 }
             }
         }
@@ -319,41 +347,24 @@ private fun FallbackWebView(
 }
 
 @Composable
+@Suppress("CyclomaticComplexMethod")
 private fun ReaderMode(
     readerModeState: ReaderModeState.Success,
-    themeMode: ThemeMode,
     openInBrowser: (String) -> Unit,
     onImageClick: (String) -> Unit,
     contentPadding: PaddingValues,
     navigator: WebViewNavigator,
     onExpandToolbar: () -> Unit,
     onCollapseToolbar: () -> Unit,
+    onReadingProgress: (Float) -> Unit,
+    initialReadingProgress: Float?,
     modifier: Modifier = Modifier,
 ) {
     val bodyColor = MaterialTheme.colorScheme.onSurface.toArgb().toHexString().substring(2)
     val linkColor = MaterialTheme.colorScheme.primary.toArgb().toHexString().substring(2)
-
-    val systemDarkTheme = isSystemInDarkTheme()
-    val isDarkMode by remember {
-        derivedStateOf {
-            when (themeMode) {
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-                ThemeMode.SYSTEM -> systemDarkTheme
-                ThemeMode.OLED -> true
-            }
-        }
-    }
-    val backgroundColor = if (isDarkMode) {
-        "#1e1e1e"
-    } else {
-        "#f6f8fa"
-    }
-    val borderColor = if (isDarkMode) {
-        "#444444"
-    } else {
-        "#d1d9e0"
-    }
+    val backgroundArgb = MaterialTheme.colorScheme.surface.toArgb()
+    val backgroundColor = "#${backgroundArgb.toHexString().substring(2)}"
+    val borderColor = "#${MaterialTheme.colorScheme.outlineVariant.toArgb().toHexString().substring(2)}"
 
     val colors = ReaderColors(
         textColor = "#$bodyColor",
@@ -367,8 +378,7 @@ private fun ReaderMode(
     val latestExpand by rememberUpdatedState(onExpandToolbar)
     val latestCollapse by rememberUpdatedState(onCollapseToolbar)
 
-    @Suppress("MagicNumber")
-    val spacerHeightDp = (contentPadding.calculateTopPadding().value - 40f).toInt().coerceAtLeast(0)
+    val spacerHeightDp = contentPadding.calculateTopPadding().value.toInt() + READER_TOP_CLEARANCE_DP
 
     val content = getReaderModeStyledHtml(
         colors = colors,
@@ -422,6 +432,17 @@ private fun ReaderMode(
         data = content,
         baseUrl = readerModeState.readerModeData.baseUrl,
     )
+    var progressRestored by remember(readerModeState.readerModeData.id.id) { mutableStateOf(false) }
+    LaunchedEffect(state.loadingState, initialReadingProgress) {
+        val progress = initialReadingProgress
+        if (!progressRestored && state.loadingState is LoadingState.Finished && progress != null && progress > 0f) {
+            navigator.evaluateJavaScript(
+                "window.scrollTo(0, Math.max(0, " +
+                    "(document.documentElement.scrollHeight - window.innerHeight) * $progress));",
+            )
+            progressRestored = true
+        }
+    }
 
     val density = LocalDensity.current
     val thresholdPx = with(density) { 6.dp.toPx() }
@@ -444,6 +465,7 @@ private fun ReaderMode(
             onCreated = { webView ->
                 CookieManager.getInstance().setAcceptCookie(true)
                 CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+                webView.setBackgroundColor(backgroundArgb)
                 webView.isVerticalScrollBarEnabled = false
                 webView.setOnScrollChangeListener { _, _, newScrollY, _, oldScrollY ->
                     val delta = newScrollY - oldScrollY
@@ -457,6 +479,8 @@ private fun ReaderMode(
                     val viewportHeightPx = webView.height
                     scrollRange = contentHeightPx
                     scrollExtent = viewportHeightPx
+                    val scrollableRange = (contentHeightPx - viewportHeightPx).coerceAtLeast(1)
+                    onReadingProgress((newScrollY.toFloat() / scrollableRange).coerceIn(0f, 1f))
                     if (!webView.canScrollVertically(1)) {
                         latestExpand()
                     }
@@ -479,6 +503,15 @@ private fun ReaderMode(
             )
         }
     }
+}
+
+@Composable
+private fun ReadingProgressLabel.label(): String = when (this) {
+    ReadingProgressLabel.JUST_STARTED -> LocalFeedFlowStrings.current.readingProgressJustStarted
+    ReadingProgressLabel.GETTING_INTO_IT -> LocalFeedFlowStrings.current.readingProgressGettingIntoIt
+    ReadingProgressLabel.HALFWAY_THROUGH -> LocalFeedFlowStrings.current.readingProgressHalfway
+    ReadingProgressLabel.NEARLY_FINISHED -> LocalFeedFlowStrings.current.readingProgressNearlyFinished
+    ReadingProgressLabel.FINISHED -> LocalFeedFlowStrings.current.readingProgressFinished
 }
 
 @Suppress("MagicNumber")
@@ -527,3 +560,5 @@ private fun isValidImageUrl(url: String): Boolean {
         url.contains("::1")
     return isHttpUrl && !isLocalhost
 }
+
+private const val READER_TOP_CLEARANCE_DP = 56

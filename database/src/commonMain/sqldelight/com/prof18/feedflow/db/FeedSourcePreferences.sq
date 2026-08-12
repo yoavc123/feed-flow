@@ -1,6 +1,10 @@
 import kotlin.Boolean;
 import kotlin.Int;
 import com.prof18.feedflow.core.model.ArticleOpenMode;
+import com.prof18.feedflow.core.model.FlowPace;
+import com.prof18.feedflow.core.model.RateLimit;
+import com.prof18.feedflow.core.model.SourcePresentation;
+import com.prof18.feedflow.core.model.VoiceStatus;
 
 CREATE TABLE feed_source_preferences (
     feed_source_id TEXT NOT NULL PRIMARY KEY,
@@ -10,6 +14,11 @@ CREATE TABLE feed_source_preferences (
     notifications_enabled INTEGER AS Boolean NOT NULL DEFAULT 0,
     pinned_position INTEGER AS Int NOT NULL DEFAULT 0,
     hide_images INTEGER AS Boolean NOT NULL DEFAULT 0,
+    flow_pace TEXT AS FlowPace,
+    muted_until INTEGER,
+    voice_status TEXT AS VoiceStatus NOT NULL DEFAULT 'AUTOMATIC',
+    source_presentation TEXT AS SourcePresentation NOT NULL DEFAULT 'STANDARD',
+    rate_limit TEXT AS RateLimit NOT NULL DEFAULT 'NONE',
     FOREIGN KEY (feed_source_id) REFERENCES feed_source(url_hash) ON DELETE CASCADE
 );
 
@@ -67,3 +76,18 @@ updatePinnedPosition:
 UPDATE feed_source_preferences
 SET pinned_position = :position
 WHERE feed_source_id = :feedSourceId;
+
+updateCalmSettings:
+UPDATE feed_source_preferences
+SET flow_pace = :flowPace,
+    muted_until = :mutedUntil,
+    voice_status = :voiceStatus,
+    source_presentation = :sourcePresentation,
+    rate_limit = :rateLimit
+WHERE feed_source_id = :feedSourceId;
+
+updateInferredFlowPace:
+UPDATE feed_source_preferences
+SET flow_pace = :flowPace
+WHERE feed_source_id = :feedSourceId
+AND flow_pace IS NULL;

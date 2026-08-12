@@ -1,0 +1,23 @@
+appId: com.prof18.feedflow.debug
+---
+- launchApp
+- openLink: feedflow://e2e/reset-and-seed?profile=content-rich
+- assertVisible: "E2E seed complete"
+- tapOn:
+    id: e2e_open_app
+- longPressOn:
+    id: article_row_e2e_article_newest_unread
+- tapOn: "Open feed settings"
+- scrollUntilVisible:
+    element: "Voice"
+    direction: DOWN
+- tapOn: "Voice"
+- tapOn: "Personal voice"
+- tapOn: "Presentation"
+- tapOn: "Webcomic"
+- tapOn: "Rate limit"
+- tapOn: "Three per day"
+- tapOn: "Mute"
+- tapOn: "For one hour"
+- tapOn:
+    id: edit_feed_save

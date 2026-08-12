@@ -182,6 +182,7 @@ class E2eSeedRunnerTest : KoinTestBase() {
             feedItemContentFileHandler.isContentAvailable(E2eSeedRunner.READER_SUCCESS_ARTICLE_ID),
         )
         assertEquals(FeedOrder.NEWEST_FIRST, feedAppearanceSettingsRepository.getFeedOrder())
-        assertFalse(settingsRepository.getShowReadArticlesTimeline())
+        assertTrue(settingsRepository.getShowReadArticlesTimeline())
+        assertFalse(settingsRepository.getMarkFeedAsReadWhenScrolling())
     }
 }

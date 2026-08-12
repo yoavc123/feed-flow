@@ -15,26 +15,26 @@ class SettingsRepositoryShowReadArticlesTest : KoinTestBase() {
     @Test
     fun `setShowReadArticlesTimeline emits new value on showReadArticlesTimelineFlow`() = runTest {
         repository.showReadArticlesTimelineFlow.test {
-            assertFalse(awaitItem())
-
-            repository.setShowReadArticlesTimeline(true)
             assertTrue(awaitItem())
 
             repository.setShowReadArticlesTimeline(false)
             assertFalse(awaitItem())
+
+            repository.setShowReadArticlesTimeline(true)
+            assertTrue(awaitItem())
         }
     }
 
     @Test
     fun `setMarkFeedAsReadWhenScrolling emits new value on markFeedAsReadWhenScrollingFlow`() = runTest {
         repository.markFeedAsReadWhenScrollingFlow.test {
-            assertTrue(awaitItem())
-
-            repository.setMarkFeedAsReadWhenScrolling(false)
             assertFalse(awaitItem())
 
             repository.setMarkFeedAsReadWhenScrolling(true)
             assertTrue(awaitItem())
+
+            repository.setMarkFeedAsReadWhenScrolling(false)
+            assertFalse(awaitItem())
         }
     }
 

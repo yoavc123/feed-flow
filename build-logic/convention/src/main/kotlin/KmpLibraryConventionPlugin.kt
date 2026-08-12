@@ -24,11 +24,6 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
                 jvmToolchain(21)
 
-                jvm()
-
-                iosArm64()
-                iosSimulatorArm64()
-
                 compilerOptions {
                     freeCompilerArgs.add("-Xexpect-actual-classes")
                 }

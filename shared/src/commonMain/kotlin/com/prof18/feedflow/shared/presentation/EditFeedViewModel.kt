@@ -2,13 +2,18 @@ package com.prof18.feedflow.shared.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prof18.feedflow.core.domain.TimeProvider
 import com.prof18.feedflow.core.model.ArticleOpenMode
 import com.prof18.feedflow.core.model.CategoryId
 import com.prof18.feedflow.core.model.CategoryName
 import com.prof18.feedflow.core.model.CategoryNameValidationResult
 import com.prof18.feedflow.core.model.FeedSource
 import com.prof18.feedflow.core.model.FeedSourceSettings
+import com.prof18.feedflow.core.model.FlowPace
+import com.prof18.feedflow.core.model.RateLimit
+import com.prof18.feedflow.core.model.SourcePresentation
 import com.prof18.feedflow.core.model.SyncAccounts
+import com.prof18.feedflow.core.model.VoiceStatus
 import com.prof18.feedflow.database.DatabaseHelper
 import com.prof18.feedflow.shared.domain.feed.FeedSourcesRepository
 import com.prof18.feedflow.shared.domain.feed.FeedStateRepository
@@ -28,6 +33,7 @@ class EditFeedViewModel internal constructor(
     private val feedSourcesRepository: FeedSourcesRepository,
     private val databaseHelper: DatabaseHelper,
     private val feedStateRepository: FeedStateRepository,
+    private val timeProvider: TimeProvider,
 ) : ViewModel() {
     val categoriesState = categoryUseCase.categoriesState
     private var originalFeedSource: FeedSource? = null
@@ -121,6 +127,39 @@ class EditFeedViewModel internal constructor(
         }
     }
 
+    fun updateSourceFlowPace(flowPace: FlowPace?) {
+        feedSourceSettingsMutableState.update { it.copy(flowPace = flowPace) }
+        markEditing()
+    }
+
+    fun updateMutedForHours(hours: Long?) {
+        feedSourceSettingsMutableState.update {
+            it.copy(mutedUntilMillis = hours?.let { value -> timeProvider.nowMillis() + value * MILLIS_PER_HOUR })
+        }
+        markEditing()
+    }
+
+    fun updateVoiceStatus(voiceStatus: VoiceStatus) {
+        feedSourceSettingsMutableState.update { it.copy(voiceStatus = voiceStatus) }
+        markEditing()
+    }
+
+    fun updateSourcePresentation(sourcePresentation: SourcePresentation) {
+        feedSourceSettingsMutableState.update { it.copy(sourcePresentation = sourcePresentation) }
+        markEditing()
+    }
+
+    fun updateRateLimit(rateLimit: RateLimit) {
+        feedSourceSettingsMutableState.update { it.copy(rateLimit = rateLimit) }
+        markEditing()
+    }
+
+    private fun markEditing() {
+        viewModelScope.launch {
+            feedEditedMutableState.emit(FeedEditedState.Idle)
+        }
+    }
+
     fun loadFeedToEdit(feedSource: FeedSource) {
         originalFeedSource = feedSource
 
@@ -134,6 +173,11 @@ class EditFeedViewModel internal constructor(
                     isPinned = feedSource.isPinned,
                     isNotificationEnabled = feedSource.isNotificationEnabled,
                     isHideImagesEnabled = feedSource.isHideImagesEnabled,
+                    flowPace = feedSource.flowPace,
+                    mutedUntilMillis = feedSource.mutedUntilMillis,
+                    voiceStatus = feedSource.voiceStatus,
+                    sourcePresentation = feedSource.sourcePresentation,
+                    rateLimit = feedSource.rateLimit,
                 )
             }
 
@@ -187,17 +231,31 @@ class EditFeedViewModel internal constructor(
                 isPinned = feedSourceSettingsState.value.isPinned,
                 isNotificationEnabled = feedSourceSettingsState.value.isNotificationEnabled,
                 isHideImagesEnabled = feedSourceSettingsState.value.isHideImagesEnabled,
+                flowPace = feedSourceSettingsState.value.flowPace,
+                mutedUntilMillis = feedSourceSettingsState.value.mutedUntilMillis,
+                voiceStatus = feedSourceSettingsState.value.voiceStatus,
+                sourcePresentation = feedSourceSettingsState.value.sourcePresentation,
+                rateLimit = feedSourceSettingsState.value.rateLimit,
             )
-
+            var state: FeedEditedState = FeedEditedState.FeedEdited(feedNameState.value)
             if (newFeedSource != null && newFeedSource != originalFeedSource) {
-                val state = feedSourcesRepository.editFeedSource(
+                state = feedSourcesRepository.editFeedSource(
                     newFeedSource = newFeedSource,
                     originalFeedSource = originalFeedSource,
                 )
-                feedEditedMutableState.emit(state)
-            } else {
-                feedEditedMutableState.emit(FeedEditedState.FeedEdited(feedNameState.value))
             }
+            if (newFeedSource != null && state is FeedEditedState.FeedEdited) {
+                databaseHelper.updateFeedSourceCalmSettings(
+                    feedSourceId = newFeedSource.id,
+                    flowPace = newFeedSource.flowPace,
+                    mutedUntilMillis = newFeedSource.mutedUntilMillis,
+                    voiceStatus = newFeedSource.voiceStatus,
+                    sourcePresentation = newFeedSource.sourcePresentation,
+                    rateLimit = newFeedSource.rateLimit,
+                )
+                feedStateRepository.getFeeds()
+            }
+            feedEditedMutableState.emit(state)
         }
     }
 
@@ -210,3 +268,5 @@ class EditFeedViewModel internal constructor(
         }
     }
 }
+
+private const val MILLIS_PER_HOUR = 60L * 60L * 1_000L

@@ -1,8 +1,12 @@
 package com.prof18.feedflow.android.home
 
 import android.content.Context
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -12,8 +16,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.prof18.feedflow.android.BrowserManager
 import com.prof18.feedflow.android.categoryselection.EditCategorySheet
@@ -39,7 +48,11 @@ import com.prof18.feedflow.shared.ui.home.ShareBehavior
 import com.prof18.feedflow.shared.ui.home.components.LoadingOperationDialog
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 import com.prof18.feedflow.shared.ui.utils.syncErrorMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 internal fun HomeScreen(
@@ -53,17 +66,17 @@ internal fun HomeScreen(
     onFeedSuggestionsClick: () -> Unit,
     onNavigateToNextFeed: () -> Unit,
     onImportExportClick: () -> Unit = {},
+    onFocusClick: () -> Unit = {},
 ) {
     val browserManager = koinInject<BrowserManager>()
     val changeFeedCategoryViewModel: ChangeFeedCategoryViewModel = koinInject()
 
     val loadingState by homeViewModel.loadingState.collectAsStateWithLifecycle()
     val feedState by homeViewModel.feedState.collectAsStateWithLifecycle()
+    val pinnedFeedState by homeViewModel.pinnedFeedState.collectAsStateWithLifecycle()
     val navDrawerState by homeViewModel.navDrawerState.collectAsStateWithLifecycle()
     val currentFeedFilter by homeViewModel.currentFeedFilter.collectAsStateWithLifecycle()
     val nextFeedPreviewState: NextFeedPreviewState by homeViewModel.nextFeedPreviewState.collectAsStateWithLifecycle()
-    val unReadCount by homeViewModel.unreadCountFlow.collectAsStateWithLifecycle(initialValue = 0)
-    val isUnreadCountHidden by homeViewModel.isUnreadCountHidden.collectAsStateWithLifecycle()
     val feedFontSizes by homeViewModel.feedFontSizeState.collectAsStateWithLifecycle()
     val swipeActions by homeViewModel.swipeActions.collectAsStateWithLifecycle()
     val feedOperation by homeViewModel.feedOperationState.collectAsStateWithLifecycle()
@@ -72,6 +85,8 @@ internal fun HomeScreen(
     val isSyncUploadRequired by homeViewModel.isSyncUploadRequired.collectAsStateWithLifecycle()
     val feedItemDisplaySettings by homeViewModel.feedItemDisplaySettings.collectAsStateWithLifecycle()
     val viewMenuState by homeViewModel.viewMenuState.collectAsStateWithLifecycle()
+    val coachingCards by homeViewModel.coachingCards.collectAsStateWithLifecycle()
+    val showFlowOnboarding by homeViewModel.showFlowOnboarding.collectAsStateWithLifecycle()
 
     val categoriesState by changeFeedCategoryViewModel.categoriesState.collectAsStateWithLifecycle()
 
@@ -81,15 +96,56 @@ internal fun HomeScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val hapticFeedback = LocalHapticFeedback.current
     val strings = LocalFeedFlowStrings.current
 
     if (feedOperation != FeedOperation.None) {
         LoadingOperationDialog(feedOperation)
     }
 
+    if (showFlowOnboarding) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(strings.flowOnboardingTitle) },
+            text = { Text(strings.flowOnboardingMessage) },
+            confirmButton = {
+                TextButton(onClick = homeViewModel::dismissFlowOnboarding) {
+                    Text(strings.flowOnboardingAction)
+                }
+            },
+        )
+    }
+
     LaunchedEffect(Unit) {
         changeFeedCategoryViewModel.categoryChangedState.collect {
             showChangeCategorySheet = false
+        }
+    }
+
+    LaunchedEffect(homeViewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                homeViewModel.reloadFeedState()
+                delay(1.minutes)
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        homeViewModel.letGoEvents.collect { feedItemId ->
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            val result = withTimeoutOrNull(6.seconds) {
+                snackbarHostState.showSnackbar(
+                    message = strings.letGoConfirmation,
+                    actionLabel = strings.undo,
+                    duration = SnackbarDuration.Indefinite,
+                )
+            }
+            snackbarHostState.currentSnackbarData?.dismiss()
+            if (result == SnackbarResult.ActionPerformed) {
+                homeViewModel.undoLetGo(feedItemId)
+            }
         }
     }
 
@@ -120,11 +176,13 @@ internal fun HomeScreen(
         }
     }
 
+    val visibleFeedState = feedState
+
     val homeDisplayState = remember(
         feedState,
+        pinnedFeedState,
+        visibleFeedState,
         navDrawerState,
-        unReadCount,
-        isUnreadCountHidden,
         loadingState,
         feedFontSizes,
         currentFeedFilter,
@@ -134,12 +192,12 @@ internal fun HomeScreen(
         isSyncUploadRequired,
         nextFeedPreviewState,
         feedItemDisplaySettings,
+        coachingCards,
     ) {
         HomeDisplayState(
-            feedItems = feedState,
+            feedItems = visibleFeedState,
+            pinnedFeedItems = pinnedFeedState,
             navDrawerState = navDrawerState,
-            unReadCount = unReadCount,
-            isUnreadCountHidden = isUnreadCountHidden,
             feedUpdateStatus = loadingState,
             feedFontSizes = feedFontSizes,
             currentFeedFilter = currentFeedFilter,
@@ -149,6 +207,7 @@ internal fun HomeScreen(
             isSyncUploadRequired = isSyncUploadRequired,
             nextFeedDisplayState = nextFeedPreviewState.asDisplayState(),
             feedItemDisplaySettings = feedItemDisplaySettings,
+            coachingCards = coachingCards,
         )
     }
 
@@ -163,8 +222,7 @@ internal fun HomeScreen(
             onDeleteDatabaseClick = { homeViewModel.deleteAllFeeds() },
             refreshData = { homeViewModel.getNewFeeds(forceRefresh = true) },
             requestNewData = { homeViewModel.requestNewFeedsPage() },
-            markAllRead = { homeViewModel.markAllRead() },
-            onBackToTimelineClick = { homeViewModel.onFeedFilterSelected(FeedFilter.Timeline) },
+            onBackToTimelineClick = { homeViewModel.onFeedFilterSelected(FeedFilter.Flow) },
             onVisibleFeedItemsChanged = homeViewModel::onVisibleFeedItemsChanged,
             markAsRead = { feedItemId -> homeViewModel.markAsRead(feedItemId.id) },
             openUrl = { urlInfo ->
@@ -180,6 +238,7 @@ internal fun HomeScreen(
                 homeViewModel.updateBookmarkStatus(feedItemId, isBookmarked)
             },
             updateReadStatus = { feedItemId, isRead -> homeViewModel.updateReadStatus(feedItemId, isRead) },
+            letGo = homeViewModel::letGo,
             markAllAboveAsRead = { feedItemId -> homeViewModel.markAllAboveAsRead(feedItemId) },
             markAllBelowAsRead = { feedItemId -> homeViewModel.markAllBelowAsRead(feedItemId) },
         )
@@ -219,12 +278,6 @@ internal fun HomeScreen(
             onReorderFeedSources = { feedSources ->
                 homeViewModel.reorderFeedSources(feedSources)
             },
-            onMarkAllReadForFeedSourceClick = { feedSource ->
-                homeViewModel.markAllReadForFeedSource(feedSource)
-            },
-            onMarkAllReadForCategoryClick = { category ->
-                homeViewModel.markAllReadForCategory(category)
-            },
         )
     }
 
@@ -263,7 +316,7 @@ internal fun HomeScreen(
         onNavigateToNextFeed = onNavigateToNextFeed,
         viewMenuState = viewMenuState,
         onFeedOrderChange = homeViewModel::updateFeedOrder,
-        onShowReadArticlesTimelineChange = homeViewModel::updateShowReadArticlesTimeline,
+        onFocusClick = onFocusClick,
     )
 
     if (showChangeCategorySheet) {

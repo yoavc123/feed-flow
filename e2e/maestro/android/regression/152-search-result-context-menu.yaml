@@ -11,7 +11,7 @@ appId: com.prof18.feedflow.debug
 
 # Open search and surface the seeded "Article With Comments" result. This row
 # has a commentsUrl, which makes the per-result Comments item appear in the
-# context menu alongside the bookmark/read/mark-all-above/below actions.
+# context menu alongside the bookmark action.
 - tapOn:
     id: home_search_button
 - tapOn:
@@ -25,11 +25,10 @@ appId: com.prof18.feedflow.debug
 # Long-press the comments result and verify the full app-owned action set.
 - longPressOn:
     id: article_row_e2e_article_comments
-- assertVisible: "Mark all above as read"
-- assertVisible: "Mark all below as read"
 - assertVisible: "Open comments"
 - assertVisible: "Add to bookmarks"
-- assertVisible: "Mark as read"
+- assertNotVisible: "Let Go"
+- assertNotVisible: "Mark as read"
 - tapOn: "Add to bookmarks"
 
 # The newly bookmarked article should now appear in the Bookmarks filter.

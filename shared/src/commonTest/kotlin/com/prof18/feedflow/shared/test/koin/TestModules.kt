@@ -5,6 +5,7 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Severity
 import com.prof18.feedflow.core.domain.HtmlParser
 import com.prof18.feedflow.core.domain.ParsedFeedContent
+import com.prof18.feedflow.core.domain.TimeProvider
 import com.prof18.feedflow.core.model.ParsingResult
 import com.prof18.feedflow.core.model.SyncResult
 import com.prof18.feedflow.core.utils.AppConfig
@@ -88,6 +89,7 @@ object TestModules {
             scoped<SqlDriver>(named(SYNC_DB_DRIVER)) { createInMemorySyncDriver() }
         }
         single<Settings> { MapSettings() }
+        single<TimeProvider> { TimeProvider { 100_000L } }
         factory<DispatcherProvider> { TestDispatcherProvider }
         single<FeedSyncWorker> {
             object : FeedSyncWorker {

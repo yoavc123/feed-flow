@@ -14,8 +14,6 @@ appId: com.prof18.feedflow.debug
 - assertVisible: "Text scale"
 - assertVisible: "Hide article date"
 - tapOn: "Hide article date"
-- assertVisible: "Hide unread indicator"
-- tapOn: "Hide unread indicator"
 - assertVisible: "Hide feed source"
 - tapOn: "Hide feed source"
 - assertVisible: "Hide title from article description"

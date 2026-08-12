@@ -69,5 +69,7 @@ internal fun Search.toFeedItem(
         isRead = is_read,
         commentsUrl = comments_url?.let { sanitizeUrl(it) },
         isBookmarked = is_bookmarked,
+        author = author,
+        isSavedOffline = is_bookmarked && content_fetched,
     )
 }

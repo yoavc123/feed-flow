@@ -13,6 +13,7 @@ import com.prof18.feedflow.db.Search
 import com.prof18.feedflow.feedsync.feedbin.domain.FeedbinRepository
 import com.prof18.feedflow.feedsync.greader.domain.GReaderRepository
 import com.prof18.feedflow.shared.data.FeedAppearanceSettingsRepository
+import com.prof18.feedflow.shared.domain.feeditem.FeedItemContentFileHandler
 import com.prof18.feedflow.shared.domain.feeditem.FeedItemParserWorker
 import com.prof18.feedflow.shared.domain.feedsync.AccountsRepository
 import com.prof18.feedflow.shared.domain.feedsync.FeedSyncRepository
@@ -30,6 +31,7 @@ internal class FeedActionsRepository(
     private val feedAppearanceSettingsRepository: FeedAppearanceSettingsRepository,
     private val feedStateRepository: FeedStateRepository,
     private val feedItemParserWorker: FeedItemParserWorker,
+    private val feedItemContentFileHandler: FeedItemContentFileHandler,
 ) {
     suspend fun markAsRead(itemsToUpdates: HashSet<FeedItemId>) {
         feedStateRepository.markAsRead(itemsToUpdates)
@@ -37,6 +39,18 @@ internal class FeedActionsRepository(
             feedItemIds = itemsToUpdates.toList(),
             isRead = true,
         )
+    }
+
+    fun prepareLetGo(feedItemId: FeedItemId) {
+        feedStateRepository.letGo(feedItemId)
+    }
+
+    suspend fun commitLetGo(feedItemId: FeedItemId) {
+        databaseHelper.letGoFeedItem(feedItemId)
+    }
+
+    suspend fun undoPendingLetGo() {
+        feedStateRepository.getFeeds()
     }
 
     suspend fun retryPendingReadStatusActions() {
@@ -298,6 +312,9 @@ internal class FeedActionsRepository(
             if (urlInfo != null) {
                 feedItemParserWorker.parse(urlInfo.id, urlInfo.url, urlInfo.imageUrl)
             }
+        } else {
+            feedItemContentFileHandler.deleteFeedItemContent(feedItemId.id)
+            databaseHelper.clearReadingHistoryContent(feedItemId.id)
         }
     }
 

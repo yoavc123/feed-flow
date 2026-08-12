@@ -1,6 +1,9 @@
 package com.prof18.feedflow.shared.test.generators
 
 import com.prof18.feedflow.core.model.FeedItem
+import kotlin.time.Clock
+
+private val DefaultPubDateMillis = Clock.System.now().toEpochMilliseconds()
 
 object FeedItemGenerator {
     fun feedItem(
@@ -11,7 +14,7 @@ object FeedItemGenerator {
         content: String? = "Feed item content",
         imageUrl: String? = "https://example.com/image.jpg",
         feedSource: com.prof18.feedflow.core.model.FeedSource = FeedSourceGenerator.feedSource(),
-        pubDateMillis: Long? = 1_704_067_200_000L,
+        pubDateMillis: Long? = DefaultPubDateMillis,
         isRead: Boolean = false,
         dateString: String? = "2024-01-01",
         commentsUrl: String? = "https://example.com/comments",
@@ -39,7 +42,7 @@ object FeedItemGenerator {
         content: String? = "Feed item content",
         imageUrl: String? = "https://example.com/image.jpg",
         feedSource: com.prof18.feedflow.core.model.FeedSource = FeedSourceGenerator.feedSource(),
-        pubDateMillis: Long? = 1_704_067_200_000L,
+        pubDateMillis: Long? = DefaultPubDateMillis,
         dateString: String? = "2024-01-01",
         commentsUrl: String? = "https://example.com/comments",
         isBookmarked: Boolean = false,
@@ -66,7 +69,7 @@ object FeedItemGenerator {
         content: String? = "Feed item content",
         imageUrl: String? = "https://example.com/image.jpg",
         feedSource: com.prof18.feedflow.core.model.FeedSource = FeedSourceGenerator.feedSource(),
-        pubDateMillis: Long? = 1_704_067_200_000L,
+        pubDateMillis: Long? = DefaultPubDateMillis,
         isRead: Boolean = false,
         dateString: String? = "2024-01-01",
         commentsUrl: String? = "https://example.com/comments",

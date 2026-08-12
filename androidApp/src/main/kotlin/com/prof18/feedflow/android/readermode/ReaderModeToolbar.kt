@@ -1,11 +1,7 @@
 package com.prof18.feedflow.android.readermode
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
@@ -13,68 +9,43 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
 
 @Composable
 internal fun ReaderModeToolbar(
     navigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
     isDetailFullscreen: Boolean = false,
     onToggleDetailFullscreen: (() -> Unit)? = null,
 ) {
-    val backButtonColor = if (isSystemInDarkTheme()) {
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    Box {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            Color.Transparent,
-                        ),
-                    ),
-                ),
-        )
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                FilledIconButton(
-                    onClick = onToggleDetailFullscreen ?: navigateBack,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .testTag(ReaderModeE2eIds.BACK_BUTTON),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = backButtonColor,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = if (onToggleDetailFullscreen != null && !isDetailFullscreen) {
-                            Icons.Default.Fullscreen
-                        } else {
-                            Icons.AutoMirrored.Filled.ArrowBack
-                        },
-                        contentDescription = null,
-                    )
-                }
+    val strings = LocalFeedFlowStrings.current
+    val isEnteringFullscreen = onToggleDetailFullscreen != null && !isDetailFullscreen
+    FilledIconButton(
+        onClick = onToggleDetailFullscreen ?: navigateBack,
+        modifier = modifier
+            .statusBarsPadding()
+            .padding(start = 12.dp, top = 8.dp)
+            .testTag(ReaderModeE2eIds.BACK_BUTTON),
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+    ) {
+        Icon(
+            imageVector = if (isEnteringFullscreen) {
+                Icons.Default.Fullscreen
+            } else {
+                Icons.AutoMirrored.Filled.ArrowBack
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent,
-            ),
+            contentDescription = when {
+                onToggleDetailFullscreen == null -> strings.readerModeBackButton
+                isEnteringFullscreen -> strings.readerModeEnterFullscreen
+                else -> strings.readerModeExitFullscreen
+            },
         )
     }
 }

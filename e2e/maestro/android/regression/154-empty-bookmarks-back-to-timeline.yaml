@@ -9,8 +9,8 @@ appId: com.prof18.feedflow.debug
 - tapOn:
     id: e2e_open_app
 
-# Filter on Bookmarks. content-rich seeds two bookmarked articles, so unbookmark
-# both via the context menu to reach the empty Bookmarks state.
+# Filter on Saved. content-rich seeds two saved articles, so remove both
+# via the context menu to reach the empty Saved state.
 - tapOn:
     id: drawer_menu_button
 - tapOn:
@@ -26,13 +26,12 @@ appId: com.prof18.feedflow.debug
     id: article_row_e2e_article_bookmarked_read
 - tapOn: "Remove from bookmarks"
 
-# Empty Bookmarks state shows the bookmark-specific message and the
-# Back to timeline shortcut.
-- assertVisible: "Nothing here, time to bookmark something!"
-- assertVisible: "Back to timeline"
-- tapOn: "Back to timeline"
+# Empty Saved state offers a calm route back to Flow.
+- assertVisible: "Nothing saved yet.*"
+- assertVisible: "Back to Flow"
+- tapOn: "Back to Flow"
 
-# Back on the Timeline filter the seeded top articles are visible again.
+# Back in Flow the seeded top articles are visible again.
 - extendedWaitUntil:
     visible:
       text: "E2E Newest Unread Article.*"

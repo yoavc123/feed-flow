@@ -4,5 +4,12 @@ enum class ThemeMode {
     SYSTEM,
     LIGHT,
     DARK,
+    PAPER,
+    TIDE,
+    TWILIGHT,
+    HEARTH,
     OLED,
+    SLATE,
+    TERMINAL,
+    SOLARIZED,
 }

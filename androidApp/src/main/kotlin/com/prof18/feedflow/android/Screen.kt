@@ -52,6 +52,9 @@ data object ImportExport : NavKey
 data object ReaderMode : NavKey
 
 @Serializable
+data object Focus : NavKey
+
+@Serializable
 data object Search : NavKey
 
 @Serializable
@@ -85,6 +88,11 @@ data class EditFeed(
     val isNotificationEnabled: Boolean,
     // Defaulted so a back stack serialized by an older version still deserializes after an upgrade
     val isHideImagesEnabled: Boolean = false,
+    val flowPace: String? = null,
+    val mutedUntilMillis: Long? = null,
+    val voiceStatus: String = "AUTOMATIC",
+    val sourcePresentation: String = "STANDARD",
+    val rateLimit: String = "NONE",
     val fetchFailed: Boolean,
 ) : NavKey
 
