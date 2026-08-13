@@ -37,7 +37,7 @@
     <string name="generic_error_message">Oups, une erreur s\'est produite :(</string>
     <string name="default_browser">Navigateur par défaut</string>
     <string name="import_feed_button">Importer un flux depuis OPML</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="feeds_title">Flux</string>
     <string name="load_file_error_message">Impossible de charger le fichier</string>
     <string name="add_feed">Ajouter un flux</string>

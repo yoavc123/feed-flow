@@ -11,7 +11,7 @@
     <string name="no_feeds_found_message">Nenhum feed encontrado. Por favor, adicione um novo feed!</string>
     <string name="no_feeds_add_one_message">Nenhum feed, favor adicionar um</string>
     <string name="loading_feed_message">Carregando feeds %s</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="mark_all_read_button">Marca todos como lidos</string>
     <string name="settings_button">Configurações</string>
     <string name="feeds_importing_message">Importando feed</string>

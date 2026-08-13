@@ -37,38 +37,16 @@ import md_theme_dark_surfaceTint
 import md_theme_dark_surfaceVariant
 import md_theme_dark_tertiary
 import md_theme_dark_tertiaryContainer
-import md_theme_light_background
 import md_theme_light_error
 import md_theme_light_errorContainer
 import md_theme_light_inverseOnSurface
 import md_theme_light_inversePrimary
 import md_theme_light_inverseSurface
-import md_theme_light_onBackground
 import md_theme_light_onError
 import md_theme_light_onErrorContainer
-import md_theme_light_onPrimary
-import md_theme_light_onPrimaryContainer
-import md_theme_light_onSecondary
-import md_theme_light_onSecondaryContainer
-import md_theme_light_onSurface
-import md_theme_light_onSurfaceVariant
 import md_theme_light_onTertiary
 import md_theme_light_onTertiaryContainer
-import md_theme_light_outline
-import md_theme_light_outlineVariant
-import md_theme_light_primary
-import md_theme_light_primaryContainer
 import md_theme_light_scrim
-import md_theme_light_secondary
-import md_theme_light_secondaryContainer
-import md_theme_light_surface
-import md_theme_light_surfaceContainer
-import md_theme_light_surfaceContainerHigh
-import md_theme_light_surfaceContainerHighest
-import md_theme_light_surfaceContainerLow
-import md_theme_light_surfaceContainerLowest
-import md_theme_light_surfaceTint
-import md_theme_light_surfaceVariant
 import md_theme_light_tertiary
 import md_theme_light_tertiaryContainer
 import md_theme_oled_background
@@ -199,14 +177,14 @@ val SolarizedColorScheme = lightColorScheme(
 )
 
 val LightColorScheme = lightColorScheme(
-    primary = md_theme_light_primary,
-    onPrimary = md_theme_light_onPrimary,
-    primaryContainer = md_theme_light_primaryContainer,
-    onPrimaryContainer = md_theme_light_onPrimaryContainer,
-    secondary = md_theme_light_secondary,
-    onSecondary = md_theme_light_onSecondary,
-    secondaryContainer = md_theme_light_secondaryContainer,
-    onSecondaryContainer = md_theme_light_onSecondaryContainer,
+    primary = Color(0xFF2559A8),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFDCE6FA),
+    onPrimaryContainer = Color(0xFF0A2E62),
+    secondary = Color(0xFF4F607A),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE1E7F2),
+    onSecondaryContainer = Color(0xFF273449),
     tertiary = md_theme_light_tertiary,
     onTertiary = md_theme_light_onTertiary,
     tertiaryContainer = md_theme_light_tertiaryContainer,
@@ -215,24 +193,24 @@ val LightColorScheme = lightColorScheme(
     errorContainer = md_theme_light_errorContainer,
     onError = md_theme_light_onError,
     onErrorContainer = md_theme_light_onErrorContainer,
-    background = md_theme_light_background,
-    onBackground = md_theme_light_onBackground,
-    surface = md_theme_light_surface,
-    onSurface = md_theme_light_onSurface,
-    surfaceVariant = md_theme_light_surfaceVariant,
-    onSurfaceVariant = md_theme_light_onSurfaceVariant,
-    outline = md_theme_light_outline,
+    background = Color(0xFFF9F8FF),
+    onBackground = Color(0xFF1C1B20),
+    surface = Color(0xFFF9F8FF),
+    onSurface = Color(0xFF1C1B20),
+    surfaceVariant = Color(0xFFE7E8EF),
+    onSurfaceVariant = Color(0xFF53565F),
+    outline = Color(0xFF767881),
     inverseOnSurface = md_theme_light_inverseOnSurface,
     inverseSurface = md_theme_light_inverseSurface,
     inversePrimary = md_theme_light_inversePrimary,
-    surfaceTint = md_theme_light_surfaceTint,
-    outlineVariant = md_theme_light_outlineVariant,
+    surfaceTint = Color.Transparent,
+    outlineVariant = Color(0xFFD8D9E0),
     scrim = md_theme_light_scrim,
-    surfaceContainerLowest = md_theme_light_surfaceContainerLowest,
-    surfaceContainerLow = md_theme_light_surfaceContainerLow,
-    surfaceContainer = md_theme_light_surfaceContainer,
-    surfaceContainerHigh = md_theme_light_surfaceContainerHigh,
-    surfaceContainerHighest = md_theme_light_surfaceContainerHighest,
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF7F6FC),
+    surfaceContainer = Color(0xFFF1F0F6),
+    surfaceContainerHigh = Color(0xFFECEBF1),
+    surfaceContainerHighest = Color(0xFFE6E5EB),
 )
 
 val DarkColorScheme = darkColorScheme(

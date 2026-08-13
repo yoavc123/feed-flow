@@ -1,9 +1,9 @@
 <div align="center">
-  <img style="border-radius: 50%" src="assets/logo.png" width="100" alt="FeedFlow app icon">
-  <h1>FeedFlow</h1>
+  <img style="border-radius: 50%" src="assets/logo.png" width="100" alt="Flow RSS app icon">
+  <h1>Flow RSS</h1>
   <p><strong>Minimal, fast RSS reading without the clutter.</strong></p>
   <p>
-    FeedFlow is a calm RSS reader for Android phones, tablets, and foldables.
+    Flow RSS is a calm RSS reader for Android phones, tablets, and foldables.
     It uses an Android-only Kotlin Multiplatform build and Compose UI.
   </p>
   <p>

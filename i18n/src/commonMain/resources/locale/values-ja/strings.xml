@@ -11,7 +11,7 @@
     <string name="refresh_feeds">フィードを再読み込み</string>
     <string name="no_feeds_found_message">フィードがありません。フィードを追加してください！</string>
     <string name="loading_feed_message">フィード %s を読み込んでいます</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="mark_all_read_button">全て既読にする</string>
     <string name="clear_old_articles_button">1週間より前のフィードを削除</string>
     <string name="settings_button">設定</string>

@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,15 @@ internal fun FeedSourceAndUnreadDotRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (showFeedSource) {
+            if (!feedItem.isRead) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = Spacing.small, bottom = Spacing.small)
+                        .size(8.dp)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+            }
             Text(
                 modifier = Modifier
                     .weight(1f)
@@ -95,6 +105,7 @@ internal fun TitleSubtitleAndImageRow(
                     text = title,
                     fontSize = feedFontSize.feedTitleFontSize.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     style = MaterialTheme.typography.titleSmall,
                     lineHeight = (feedFontSize.feedTitleFontSize + 4).sp,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -178,6 +189,7 @@ internal fun FeedItemImageCardContent(
                     overflow = TextOverflow.Ellipsis,
                     fontSize = feedFontSize.feedTitleFontSize.sp,
                     fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
                     style = MaterialTheme.typography.titleSmall,
                     lineHeight = (feedFontSize.feedTitleFontSize + 4).sp,
                     color = MaterialTheme.colorScheme.onSurface,

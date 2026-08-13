@@ -42,7 +42,7 @@
     <string name="generic_error_message">Sorry, irgendetwas ist schiefgelaufen :(</string>
     <string name="default_browser">Standardbrowser</string>
     <string name="import_feed_button">Feed aus OPML importieren</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="feeds_title">Feeds</string>
     <string name="load_file_error_message">Laden der Datei fehlgeschlagen</string>
     <string name="add_feed">Feed hinzufügen</string>

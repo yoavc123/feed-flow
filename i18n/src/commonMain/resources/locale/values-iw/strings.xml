@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="no_feeds_add_one_message">אין עדכונים, אנא הוסף אחד</string>
     <string name="export_started_message">יצירת ייצוא</string>
     <string name="feeds_export_done_message">הייצוא הושלם</string>

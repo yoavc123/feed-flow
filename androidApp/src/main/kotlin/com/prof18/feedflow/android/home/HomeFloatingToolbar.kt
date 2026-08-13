@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -22,10 +20,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -53,6 +51,9 @@ import com.prof18.feedflow.shared.ui.icons.CloseSidebarReversed
 import com.prof18.feedflow.shared.ui.icons.OpenSidebar
 import com.prof18.feedflow.shared.ui.icons.OpenSidebarReversed
 import com.prof18.feedflow.shared.ui.utils.LocalFeedFlowStrings
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,123 +78,104 @@ fun HomeFloatingToolbar(
     val viewOptionsSheetState = rememberModalBottomSheetState()
     val strings = LocalFeedFlowStrings.current
     val currentFeedFilter = displayState.currentFeedFilter
-    val toolbarContainerColor = homeFloatingToolbarContainerColor()
-    val toolbarBorder = homeFloatingToolbarBorder()
-
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 16.dp)
+            .background(MaterialTheme.colorScheme.background)
             .padding(top = FloatingToolbarDefaults.ScreenOffset),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
+        Row(
             modifier = Modifier
-                .weight(1f, fill = false)
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = 8.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { onClick() },
                         onDoubleTap = { onDoubleClick() },
                     )
                 },
-            shape = FloatingToolbarDefaults.ContainerShape,
-            color = toolbarContainerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shadowElevation = 6.dp,
-            border = toolbarBorder,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.padding(end = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            if (showDrawerMenu) {
+                DrawerIcon(
+                    onDrawerMenuClick = onDrawerMenuClick,
+                    isDrawerOpen = isDrawerOpen,
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.Center,
             ) {
-                if (showDrawerMenu) {
-                    DrawerIcon(
-                        onDrawerMenuClick = onDrawerMenuClick,
-                        isDrawerOpen = isDrawerOpen,
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(28.dp)
-                            .background(
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                            ),
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center,
-                ) {
+                val isMainFlow = currentFeedFilter == FeedFilter.Flow ||
+                    currentFeedFilter == FeedFilter.Timeline
+                Text(
+                    modifier = Modifier.widthIn(max = 220.dp),
+                    text = if (isMainFlow) strings.appName else currentFeedFilter.getTitle(),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (isMainFlow) {
+                    val date = remember {
+                        LocalDate.now().format(
+                            DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy", Locale.getDefault()),
+                        ).uppercase(Locale.getDefault())
+                    }
                     Text(
-                        modifier = Modifier.widthIn(max = 180.dp),
-                        text = currentFeedFilter.getTitle(),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        text = date,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            IconButton(
+                modifier = Modifier.testTag(HomeToolbarE2eIds.SEARCH_BUTTON),
+                onClick = onSearchClick,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = strings.searchButtonContentDescription,
+                )
+            }
 
-        Surface(
-            shape = FloatingToolbarDefaults.ContainerShape,
-            color = toolbarContainerColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shadowElevation = 6.dp,
-            border = toolbarBorder,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Box {
                 IconButton(
-                    modifier = Modifier.testTag(HomeToolbarE2eIds.SEARCH_BUTTON),
-                    onClick = onSearchClick,
+                    modifier = Modifier.testTag(HomeToolbarE2eIds.MORE_MENU_BUTTON),
+                    onClick = { showMenu = !showMenu },
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = strings.searchButtonContentDescription,
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = strings.moreOptionsButtonContentDescription,
                     )
                 }
 
-                Box {
-                    IconButton(
-                        modifier = Modifier.testTag(HomeToolbarE2eIds.MORE_MENU_BUTTON),
-                        onClick = { showMenu = !showMenu },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = strings.moreOptionsButtonContentDescription,
-                        )
-                    }
-
-                    HomeAppBarDropdownMenu(
-                        showMenu = showMenu,
-                        feedFilter = currentFeedFilter,
-                        closeMenu = { showMenu = false },
-                        onClearOldArticlesClicked = onClearOldArticlesClicked,
-                        onEditFeedClick = { feedSource ->
-                            showMenu = false
-                            onEditFeedClick(feedSource)
-                        },
-                        isSyncUploadRequired = displayState.isSyncUploadRequired,
-                        onBackupClick = {
-                            showMenu = false
-                            onBackupClick()
-                        },
-                        onViewOptionsClick = { showViewOptionsSheet = true },
-                        onFocusClick = onFocusClick,
-                    )
-                }
+                HomeAppBarDropdownMenu(
+                    showMenu = showMenu,
+                    feedFilter = currentFeedFilter,
+                    closeMenu = { showMenu = false },
+                    onClearOldArticlesClicked = onClearOldArticlesClicked,
+                    onEditFeedClick = { feedSource ->
+                        showMenu = false
+                        onEditFeedClick(feedSource)
+                    },
+                    isSyncUploadRequired = displayState.isSyncUploadRequired,
+                    onBackupClick = {
+                        showMenu = false
+                        onBackupClick()
+                    },
+                    onViewOptionsClick = { showViewOptionsSheet = true },
+                    onFocusClick = onFocusClick,
+                )
             }
         }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 
     if (showViewOptionsSheet) {

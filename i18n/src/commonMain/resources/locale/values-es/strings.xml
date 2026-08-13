@@ -9,7 +9,7 @@
     <string name="refresh_feeds">Recargar los feeds</string>
     <string name="no_feeds_found_message">Sin feeds. ¡Por favor añade uno!</string>
     <string name="loading_feed_message">Cargando feeds %s</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="mark_all_read_button">Marcar todo como leido</string>
     <string name="feeds_importing_message">Importando feed</string>
     <string name="feeds_import_done_message">Importación realizada</string>

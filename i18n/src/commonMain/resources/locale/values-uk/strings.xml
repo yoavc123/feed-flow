@@ -130,7 +130,7 @@
     <string name="wrong_credentials_error_message">Облікові дані вказані невірно. Спробуйте ще раз.</string>
     <string name="feed_added_message_without_name">Стрічку додано</string>
     <string name="feed_url_placeholder">https://myfavouriteblog.com/feed</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="link_opening_preference_internal_browser">Внутрішній браузер</string>
     <string name="link_opening_preference_preferred_browser">Улюблений браузер</string>
     <string name="link_opening_preference_default">За замовчуванням</string>

@@ -8,7 +8,7 @@
     <string name="refresh_feeds">Uuenda uudisvood</string>
     <string name="no_feeds_found_message">Uudisvoogusid ei leidu. Palun lisa mõni!</string>
     <string name="loading_feed_message">Laadime uudisvooge %s</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="mark_all_read_button">Märgi kõik loetuks</string>
     <string name="settings_button">Seadistused</string>
     <string name="feeds_importing_message">Impordime uudisvoogu</string>

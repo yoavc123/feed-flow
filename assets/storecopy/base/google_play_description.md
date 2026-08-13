@@ -1,4 +1,4 @@
-FeedFlow is a calm, chronological RSS reader for Android. Articles arrive in your Flow, stay for a source-specific amount of time, soften as they age, and leave naturally. There are no unread totals and no inbox to finish.
+Flow RSS is a calm, chronological RSS reader for Android. Articles arrive in your Flow, stay for a source-specific amount of time, soften as they age, and leave naturally. There are no unread totals and no inbox to finish.
 
 Let Reading Stay Optional
 - Choose Flash, Daily, Standard, Slow, or Timeless pacing at app, Stream, or source level.
@@ -21,7 +21,7 @@ Organize Sources, Not Obligations
 Sync Your Way
 - Keep everything local or sync through Dropbox or Google Drive.
 - Connect to FreshRSS, Miniflux, Feedbin, or BazQux Reader.
-- Existing remote read state remains compatible for sync, while FeedFlow keeps it out of the reading experience.
+- Existing remote read state remains compatible for sync, while Flow RSS keeps it out of the reading experience.
 
 Designed for Android
 - Material You plus Paper, Tide, Twilight, Hearth, OLED, Slate, Terminal, and Solarized palettes.
@@ -29,4 +29,4 @@ Designed for Android
 - Reduce-motion support, TalkBack-friendly controls, and Android predictive back behavior.
 - Google Play and F-Droid builds with the same calm Flow experience.
 
-FeedFlow is open source, has no algorithmic ranking, and sends no article content to a cloud AI service.
+Flow RSS is open source, has no algorithmic ranking, and sends no article content to a cloud AI service.

@@ -43,7 +43,7 @@
     <string name="generic_error_message">Mi dispiace, qualcosa è andato storto :(</string>
     <string name="default_browser">Browser predefinito</string>
     <string name="import_feed_button">Importa feed da OPML</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="feeds_title">Elenco dei feed</string>
     <string name="load_file_error_message">Impossibile caricare il file</string>
     <string name="add_feed">Aggiungi feed</string>

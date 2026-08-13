@@ -38,7 +38,7 @@
     <string name="generic_error_message">Hiba történt :(</string>
     <string name="default_browser">Alapértelmezett böngésző</string>
     <string name="import_feed_button">Hírforrás importálása OPML-fájlból</string>
-    <string name="app_name" translatable="false">FeedFlow</string>
+    <string name="app_name" translatable="false">Flow RSS</string>
     <string name="feeds_title">Hírforrások</string>
     <string name="load_file_error_message">Nem sikerült betölteni a fájlt</string>
     <string name="add_feed">Hírforrás hozzáadása</string>
